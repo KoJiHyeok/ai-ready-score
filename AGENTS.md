@@ -86,6 +86,14 @@ GitHub Actions CI must keep passing for future changes. CI runs tests and CLI va
 - Keep Markdown output stable enough for GitHub comments, issues, and saved reports.
 - Preserve Windows, macOS, and Linux compatibility.
 
+## Documentation Guidelines
+
+- README.md and release documentation are bilingual in English and Korean.
+- When user-facing behavior changes, update both English and Korean documentation in the same change.
+- Do not leave Korean docs outdated when English docs change.
+- Do not leave English docs outdated when Korean docs change.
+- Keep CHANGELOG.md, docs/release-checklist.md, and docs/release-notes/* aligned for release-related changes.
+
 ## Scoring System
 
 Total score: 100 points.
@@ -151,8 +159,10 @@ Before preparing a release for npm:
 Before preparing a public GitHub/npm release:
 
 - Confirm `README.md` is clear for first-time users.
-- Confirm `CHANGELOG.md` includes the target version entry.
-- Confirm `docs/release-checklist.md` is up to date.
+- Confirm `README.md` is clear for both English-speaking and Korean-speaking first-time users.
+- Confirm `CHANGELOG.md` includes the target version entry in English and Korean.
+- Confirm `docs/release-checklist.md` is up to date in English and Korean.
+- Confirm `docs/release-notes/` includes bilingual GitHub Release notes for the target version.
 - Confirm `package.json` version matches the intended release tag.
 - Run `npm test`.
 - Run `npm run check`.

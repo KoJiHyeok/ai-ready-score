@@ -23,6 +23,8 @@
   "files": [
     "bin/",
     "src/",
+    "docs/release-checklist.md",
+    "docs/release-notes/",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
