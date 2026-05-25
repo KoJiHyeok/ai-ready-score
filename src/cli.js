@@ -5,6 +5,13 @@ const path = require('path');
 const { scanProject } = require('./scanner');
 const { scoreProject } = require('./scorer');
 const { formatTextReport, formatJsonReport } = require('./reporter');
+const {
+  DEFAULT_LANGUAGE,
+  getMessages,
+  getUnsupportedLanguageError,
+  isSupportedLanguage,
+  normalizeLanguage
+} = require('./i18n');
 
 function getPackageVersion() {
   const packagePath = path.join(__dirname, '..', 'package.json');
@@ -17,25 +24,29 @@ function getPackageVersion() {
   }
 }
 
-function getHelpText() {
+function getHelpText(language) {
+  const messages = getMessages(language).help;
+
   return [
     'ai-ready-score',
     '',
-    'Score how ready a local codebase is for AI coding agents.',
+    messages.description,
     '',
-    'Usage:',
+    messages.usage,
     '  node bin/ai-ready-score.js [path] [options]',
     '',
-    'Options:',
-    '  --json              Print valid JSON output',
-    '  --output <file>     Write the report to a file',
-    '  --help              Show this help text',
-    '  --version           Show the package version',
+    messages.options,
+    `  --json              ${messages.json}`,
+    `  --output <file>     ${messages.output}`,
+    `  --lang <ko|en>      ${messages.lang}`,
+    `  --help              ${messages.help}`,
+    `  --version           ${messages.version}`,
     '',
-    'Examples:',
+    messages.examples,
     '  node bin/ai-ready-score.js',
     '  node bin/ai-ready-score.js .',
     '  node bin/ai-ready-score.js ./examples/good-project',
+    '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
     '  node bin/ai-ready-score.js --output report.json'
   ].join('\n');
@@ -46,6 +57,7 @@ function parseArgs(args) {
     targetPath: '.',
     json: false,
     output: null,
+    lang: DEFAULT_LANGUAGE,
     help: false,
     version: false,
     errors: []
@@ -67,6 +79,34 @@ function parseArgs(args) {
 
     if (arg === '--json') {
       options.json = true;
+      continue;
+    }
+
+    if (arg === '--lang') {
+      const language = args[index + 1];
+
+      if (!language || language.startsWith('--')) {
+        options.errors.push('--lang requires ko or en.');
+      } else if (!isSupportedLanguage(language)) {
+        options.errors.push(getUnsupportedLanguageError(language));
+        index += 1;
+      } else {
+        options.lang = normalizeLanguage(language);
+        index += 1;
+      }
+      continue;
+    }
+
+    if (arg.startsWith('--lang=')) {
+      const language = arg.slice('--lang='.length);
+
+      if (!language) {
+        options.errors.push('--lang requires ko or en.');
+      } else if (!isSupportedLanguage(language)) {
+        options.errors.push(getUnsupportedLanguageError(language));
+      } else {
+        options.lang = normalizeLanguage(language);
+      }
       continue;
     }
 
@@ -114,7 +154,7 @@ function runCli(args, environment) {
   const parsed = parseArgs(args || []);
 
   if (parsed.help) {
-    stdout.write(`${getHelpText()}\n`);
+    stdout.write(`${getHelpText(parsed.lang)}\n`);
     return 0;
   }
 
@@ -137,7 +177,7 @@ function runCli(args, environment) {
   try {
     const scan = scanProject(parsed.targetPath, { cwd });
     const result = scoreProject(scan);
-    const report = parsed.json || parsed.output ? formatJsonReport(result) : formatTextReport(result);
+    const report = parsed.json || parsed.output ? formatJsonReport(result) : formatTextReport(result, { lang: parsed.lang });
 
     if (parsed.output) {
       const outputPath = writeOutputFile(parsed.output, report, cwd);

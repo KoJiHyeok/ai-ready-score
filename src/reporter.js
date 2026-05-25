@@ -1,64 +1,88 @@
 'use strict';
 
+const { DEFAULT_LANGUAGE, getMessages, translateWarning } = require('./i18n');
+
 function formatJsonReport(result) {
   return JSON.stringify(result, null, 2);
 }
 
-function formatTextReport(result) {
+function getCategoryName(category, messages) {
+  return messages.categories[category.id] || category.name;
+}
+
+function getCheckLabel(check, messages) {
+  return messages.checks[check.id] || check.label;
+}
+
+function getRecommendation(check, messages) {
+  return messages.recommendations[check.id] || check.recommendation;
+}
+
+function formatTextReport(result, options) {
+  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
+  const messages = getMessages(language);
+  const report = messages.report;
   const lines = [];
   const passedChecks = result.checks.filter((check) => check.passed);
   const failedChecks = result.checks.filter((check) => !check.passed);
 
-  lines.push('ai-ready-score');
+  lines.push(report.title);
   lines.push('');
-  lines.push(`Target path: ${result.targetPath}`);
-  lines.push(`Total score: ${result.score}/${result.maxScore}`);
-  lines.push(`Grade: ${result.grade}`);
+  lines.push(`${report.targetPath}: ${result.targetPath}`);
+  lines.push(`${report.totalScore}: ${result.score}/${result.maxScore}`);
+  lines.push(`${report.grade}: ${result.grade}`);
   lines.push('');
-  lines.push('Category breakdown:');
+  lines.push(`${report.categoryBreakdown}:`);
 
   Object.keys(result.categories).forEach((categoryId) => {
     const category = result.categories[categoryId];
-    lines.push(`- ${category.name}: ${category.score}/${category.maxScore}`);
+    lines.push(`- ${getCategoryName(category, messages)}: ${category.score}/${category.maxScore}`);
   });
 
   lines.push('');
-  lines.push('Passed checks:');
+  lines.push(`${report.passedChecks}:`);
   if (passedChecks.length === 0) {
-    lines.push('- None');
+    lines.push(`- ${report.none}`);
   } else {
     passedChecks.forEach((check) => {
-      lines.push(`- [pass] ${check.label} (${check.points}/${check.maxPoints})`);
+      lines.push(`- [${report.pass}] ${getCheckLabel(check, messages)} (${check.points}/${check.maxPoints})`);
     });
   }
 
   lines.push('');
-  lines.push('Failed checks:');
+  lines.push(`${report.failedChecks}:`);
   if (failedChecks.length === 0) {
-    lines.push('- None');
+    lines.push(`- ${report.none}`);
   } else {
     failedChecks.forEach((check) => {
-      lines.push(`- [fail] ${check.label} (0/${check.maxPoints})`);
+      lines.push(`- [${report.fail}] ${getCheckLabel(check, messages)} (0/${check.maxPoints})`);
     });
   }
 
   lines.push('');
-  lines.push('Warnings:');
+  lines.push(`${report.warnings}:`);
   if (result.warnings.length === 0) {
-    lines.push('- None');
+    lines.push(`- ${report.none}`);
   } else {
     result.warnings.forEach((warning) => {
-      lines.push(`- ${warning}`);
+      lines.push(`- ${translateWarning(warning, language)}`);
     });
   }
 
   lines.push('');
-  lines.push('Recommended next steps:');
-  if (result.recommendations.length === 0) {
-    lines.push('- No immediate next steps. Keep docs and tests current as the project changes.');
+  lines.push(`${report.recommendations}:`);
+  if (failedChecks.length === 0) {
+    lines.push(`- ${report.noRecommendations}`);
   } else {
-    result.recommendations.forEach((recommendation) => {
-      lines.push(`- ${recommendation}`);
+    const seenRecommendations = new Set();
+
+    failedChecks.forEach((check) => {
+      const recommendation = getRecommendation(check, messages);
+
+      if (!seenRecommendations.has(recommendation)) {
+        seenRecommendations.add(recommendation);
+        lines.push(`- ${recommendation}`);
+      }
     });
   }
 

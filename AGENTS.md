@@ -24,6 +24,7 @@ Keep scanner, scorer, reporter, and CLI logic separate:
 - `src/rules.js` should define scoring rules and categories.
 - `src/scorer.js` should calculate scores, grades, checks, and recommendations.
 - `src/reporter.js` should format text and JSON output.
+- `src/i18n.js` should store translated labels and messages for human-readable output.
 - `src/cli.js` should parse CLI options, run the scan, and write output.
 
 ## Runtime and Tooling
@@ -41,6 +42,8 @@ node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --lang ko
+node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js --json
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help
@@ -100,6 +103,7 @@ Grades:
 - `src/scorer.js`
 - `src/scanner.js`
 - `src/reporter.js`
+- `src/i18n.js`
 - `src/cli.js`
 - `tests/*.test.js`
 
@@ -130,6 +134,8 @@ node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --lang ko
+node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js --json
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help

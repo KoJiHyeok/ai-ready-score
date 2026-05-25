@@ -22,8 +22,17 @@ test('--help works', () => {
   const result = runCli(['--help']);
 
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /Usage:/);
+  assert.match(result.stdout, /사용법:/);
   assert.match(result.stdout, /--json/);
+  assert.match(result.stdout, /--lang <ko\|en>/);
+});
+
+test('--help supports English', () => {
+  const result = runCli(['--help', '--lang', 'en']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Usage:/);
+  assert.match(result.stdout, /Set human-readable output language/);
 });
 
 test('--version works', () => {
@@ -43,6 +52,8 @@ test('--json returns parseable JSON', () => {
   assert.equal(parsed.maxScore, 100);
   assert.equal(typeof parsed.targetPath, 'string');
   assert.equal(typeof parsed.score, 'number');
+  assert.equal(parsed.categories.documentation.name, 'Documentation');
+  assert.ok(parsed.checks.some((check) => check.label === 'README.md exists'));
   assert.ok(Array.isArray(parsed.checks));
   assert.ok(Array.isArray(parsed.recommendations));
   assert.ok(Array.isArray(parsed.warnings));
@@ -70,17 +81,46 @@ test('default command produces human-readable output', () => {
   const result = runCli([]);
 
   assert.equal(result.status, 0);
+  assert.match(result.stdout, /대상 경로:/);
+  assert.match(result.stdout, /총점:/);
+  assert.match(result.stdout, /카테고리별 점수:/);
+  assert.match(result.stdout, /추천 다음 단계:/);
+  assert.match(result.stdout, /문서화:/);
+});
+
+test('--lang ko produces Korean human-readable output', () => {
+  const result = runCli(['.', '--lang', 'ko']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /대상 경로:/);
+  assert.match(result.stdout, /\[통과\]/);
+  assert.match(result.stdout, /README\.md가 있습니다\./);
+});
+
+test('--lang en produces English human-readable output', () => {
+  const result = runCli(['.', '--lang', 'en']);
+
+  assert.equal(result.status, 0);
   assert.match(result.stdout, /Target path:/);
   assert.match(result.stdout, /Total score:/);
   assert.match(result.stdout, /Category breakdown:/);
-  assert.match(result.stdout, /Recommended next steps:/);
+  assert.match(result.stdout, /\[pass\] README\.md exists/);
+});
+
+test('unsupported --lang returns a friendly error', () => {
+  const result = runCli(['.', '--lang', 'ja']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /지원하지 않는 언어입니다: ja/);
+  assert.match(result.stderr, /--lang ko 또는 --lang en/);
 });
 
 test('explicit target path is parsed separately from options', () => {
-  const parsed = parseArgs(['./examples/good-project', '--json']);
+  const parsed = parseArgs(['./examples/good-project', '--json', '--lang', 'en']);
 
   assert.equal(parsed.targetPath, './examples/good-project');
   assert.equal(parsed.json, true);
+  assert.equal(parsed.lang, 'en');
   assert.equal(parsed.errors.length, 0);
 });
 
@@ -89,7 +129,7 @@ test('example projects can be scanned through the CLI', () => {
   const poor = runCli(['./examples/poor-project']);
 
   assert.equal(good.status, 0);
-  assert.match(good.stdout, /Grade: A/);
+  assert.match(good.stdout, /등급: A/);
   assert.equal(poor.status, 0);
-  assert.match(poor.stdout, /Total score:/);
+  assert.match(poor.stdout, /총점:/);
 });

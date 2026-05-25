@@ -1,5 +1,7 @@
 # ai-ready-score
 
+[![CI](https://github.com/KoJiHyeok/ai-ready-score/actions/workflows/ci.yml/badge.svg)](https://github.com/KoJiHyeok/ai-ready-score/actions/workflows/ci.yml)
+
 ## Overview
 
 `ai-ready-score` is a Node.js CLI that analyzes a local project folder and scores how ready the codebase is for AI coding agents such as Codex, Claude Code, Cursor, and Antigravity.
@@ -15,7 +17,8 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Scores a local folder from 0 to 100.
 - Assigns a grade from A to F.
 - Reports category breakdowns, passed checks, failed checks, warnings, and recommended next steps.
-- Supports human-readable terminal output.
+- Supports Korean human-readable terminal output by default.
+- Supports English human-readable terminal output with `--lang en`.
 - Supports machine-readable JSON output.
 - Can write a JSON report to disk.
 - Uses only Node.js built-in modules.
@@ -46,6 +49,8 @@ node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --lang ko
+node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js --json
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help
@@ -56,6 +61,7 @@ Options:
 
 - `--json`: print valid JSON.
 - `--output <file>`: write a JSON report to a file.
+- `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--help`: show usage help.
 - `--version`: show the package version.
 
@@ -64,16 +70,16 @@ Options:
 ```text
 ai-ready-score
 
-Target path: /path/to/project
-Total score: 90/100
-Grade: A
+대상 경로: /path/to/project
+총점: 90/100
+등급: A
 
-Category breakdown:
-- Documentation: 25/25
-- Project Structure: 17/20
-- Package Scripts: 20/20
-- AI Readiness: 20/20
-- GitHub & Safety Readiness: 8/15
+카테고리별 점수:
+- 문서화: 25/25
+- 프로젝트 구조: 17/20
+- package.json 스크립트: 20/20
+- AI 작업 친화성: 20/20
+- GitHub 및 보안 준비도: 8/15
 ```
 
 ## Scoring Rubric
@@ -142,29 +148,30 @@ Sensitive root files create warnings:
 
 ```text
 ai-ready-score/
-├─ bin/
-│  └─ ai-ready-score.js
-├─ src/
-│  ├─ index.js
-│  ├─ cli.js
-│  ├─ scanner.js
-│  ├─ rules.js
-│  ├─ scorer.js
-│  ├─ reporter.js
-│  └─ utils.js
-├─ tests/
-│  ├─ scorer.test.js
-│  ├─ scanner.test.js
-│  └─ cli.test.js
-├─ examples/
-│  ├─ good-project/
-│  └─ poor-project/
-├─ README.md
-├─ AGENTS.md
-├─ package.json
-├─ .gitignore
-├─ LICENSE
-└─ .env.example
+|-- bin/
+|   `-- ai-ready-score.js
+|-- src/
+|   |-- index.js
+|   |-- cli.js
+|   |-- scanner.js
+|   |-- rules.js
+|   |-- scorer.js
+|   |-- reporter.js
+|   |-- i18n.js
+|   `-- utils.js
+|-- tests/
+|   |-- scorer.test.js
+|   |-- scanner.test.js
+|   `-- cli.test.js
+|-- examples/
+|   |-- good-project/
+|   `-- poor-project/
+|-- README.md
+|-- AGENTS.md
+|-- package.json
+|-- .gitignore
+|-- LICENSE
+`-- .env.example
 ```
 
 ## Development
@@ -186,6 +193,7 @@ Keep the implementation split by responsibility:
 - `src/rules.js` defines the scoring rubric.
 - `src/scorer.js` calculates scores and grades.
 - `src/reporter.js` formats terminal and JSON output.
+- `src/i18n.js` stores translated labels and messages for human-readable output.
 - `src/cli.js` parses options and connects the pieces.
 
 ## Testing
@@ -196,7 +204,11 @@ Tests use the built-in `node:test` runner:
 npm test
 ```
 
-The suite covers grade calculation, score bounds, scanner behavior, invalid `package.json` handling, CLI help, JSON output, and scanning both example projects.
+The suite covers grade calculation, score bounds, scanner behavior, invalid `package.json` handling, CLI help, Korean and English text output, JSON output, and scanning both example projects.
+
+## Quality Checks
+
+GitHub Actions runs the CI workflow on every push and pull request. The workflow tests Node.js 18 and Node.js 20, runs `npm test`, and validates the CLI against the repository plus both example projects.
 
 ## Roadmap
 

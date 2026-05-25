@@ -5,6 +5,7 @@ const { scanProject } = require('./scanner');
 const { scoreProject, getGrade } = require('./scorer');
 const { formatTextReport, formatJsonReport } = require('./reporter');
 const { rules, categories } = require('./rules');
+const { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } = require('./i18n');
 
 module.exports = {
   runCli,
@@ -14,5 +15,7 @@ module.exports = {
   formatTextReport,
   formatJsonReport,
   rules,
-  categories
+  categories,
+  DEFAULT_LANGUAGE,
+  SUPPORTED_LANGUAGES
 };
