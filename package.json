@@ -1,0 +1,27 @@
+{
+  "name": "ai-ready-score",
+  "version": "0.1.0",
+  "description": "Score how ready a local codebase is for AI coding agents.",
+  "main": "src/index.js",
+  "bin": {
+    "ai-ready-score": "bin/ai-ready-score.js"
+  },
+  "scripts": {
+    "dev": "node bin/ai-ready-score.js .",
+    "start": "node bin/ai-ready-score.js",
+    "test": "node --test tests/*.test.js",
+    "check": "npm test"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "codebase",
+    "readiness",
+    "scoring"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
