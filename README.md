@@ -208,7 +208,9 @@ The suite covers grade calculation, score bounds, scanner behavior, invalid `pac
 
 ## Quality Checks
 
-GitHub Actions runs the CI workflow on every push and pull request. The workflow tests Node.js 18 and Node.js 20, runs `npm test`, and validates the CLI against the repository plus both example projects.
+GitHub Actions runs the CI workflow on every push and pull request. The workflow tests Node.js 18, Node.js 20, and Node.js 22.
+
+CI runs `npm test` and validates the CLI with the default Korean output, explicit Korean output, English output, JSON output, both example projects, help output, and version output.
 
 ## Roadmap
 

@@ -67,6 +67,8 @@ npm test
 
 When changing scoring rules, update tests, README.md, AGENTS.md, and example projects so the documented rubric matches behavior.
 
+GitHub Actions CI must keep passing for future changes. CI runs tests and CLI validation on Node.js 18, Node.js 20, and Node.js 22.
+
 ## Coding Guidelines
 
 - Use CommonJS only.
@@ -132,11 +134,11 @@ Run:
 npm test
 node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
-node bin/ai-ready-score.js ./examples/good-project
-node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
-node bin/ai-ready-score.js --json
+node bin/ai-ready-score.js . --json
+node bin/ai-ready-score.js ./examples/good-project
+node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help
 node bin/ai-ready-score.js --version

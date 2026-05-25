@@ -15,6 +15,7 @@ jobs:
         node-version:
           - 18
           - 20
+          - 22
 
     steps:
       - name: Check out repository
@@ -31,11 +32,23 @@ jobs:
       - name: Validate CLI on repository
         run: node bin/ai-ready-score.js .
 
+      - name: Validate Korean output
+        run: node bin/ai-ready-score.js . --lang ko
+
+      - name: Validate English output
+        run: node bin/ai-ready-score.js . --lang en
+
+      - name: Validate JSON output
+        run: node bin/ai-ready-score.js . --json
+
       - name: Validate CLI on good example
         run: node bin/ai-ready-score.js ./examples/good-project
 
       - name: Validate CLI on poor example
         run: node bin/ai-ready-score.js ./examples/poor-project
 
-      - name: Validate JSON output
-        run: node bin/ai-ready-score.js --json
+      - name: Validate help output
+        run: node bin/ai-ready-score.js --help
+
+      - name: Validate version output
+        run: node bin/ai-ready-score.js --version
