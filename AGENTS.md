@@ -59,6 +59,7 @@ You can also use package scripts:
 ```sh
 npm start
 npm run dev
+npm run check
 ```
 
 ## How to Test
@@ -127,9 +128,40 @@ Grades:
 - Do not add external npm dependencies.
 - Do not add AI API calls.
 - Do not add network requests.
+- Do not publish to npm without explicit user approval.
+- Do not change version numbers casually; version changes should match an intentional release plan.
 - Do not combine scanner, scorer, reporter, and CLI logic into one file.
 - Do not change scoring rules without updating tests.
 - Do not rely on shell-specific path separators.
+
+## npm Publishing Checklist
+
+Before preparing a release for npm:
+
+- Confirm `package.json` has correct `name`, `version`, `description`, `main`, `bin`, `keywords`, `license`, `repository`, `bugs`, `homepage`, and `files`.
+- Confirm `bin.ai-ready-score` points to `bin/ai-ready-score.js`.
+- Confirm `bin/ai-ready-score.js` keeps the `#!/usr/bin/env node` shebang.
+- Run `npm run check`.
+- Run `npm pack --dry-run` and inspect the packed file list.
+- Confirm generated reports such as `report.json` and `report.md` are not included unless intentionally needed.
+- Get explicit user approval before running `npm publish`.
+
+## Public Release Checklist
+
+Before preparing a public GitHub/npm release:
+
+- Confirm `README.md` is clear for first-time users.
+- Confirm `CHANGELOG.md` includes the target version entry.
+- Confirm `docs/release-checklist.md` is up to date.
+- Confirm `package.json` version matches the intended release tag.
+- Run `npm test`.
+- Run `npm run check`.
+- Run `npm pack --dry-run`.
+- Run `git status --short`.
+- Create the tag only when requested: `git tag v0.1.0`.
+- Push the branch only when requested: `git push origin main`.
+- Push the tag only when requested: `git push origin v0.1.0`.
+- Publish to npm only after explicit user approval.
 
 ## Before Submitting Changes
 
@@ -151,6 +183,7 @@ node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help
 node bin/ai-ready-score.js --version
+npm pack --dry-run
 ```
 
 Remove generated `report.json` and `report.md` before committing unless they are intentionally needed.

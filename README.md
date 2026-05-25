@@ -27,7 +27,21 @@ AI coding agents work best when a repository has clear documentation, predictabl
 
 ## Installation
 
-Clone the repository and run the CLI with Node.js:
+Run without installing once it is published to npm:
+
+```sh
+npx ai-ready-score .
+npx ai-ready-score . --markdown
+```
+
+Install globally once it is published to npm:
+
+```sh
+npm install -g ai-ready-score
+ai-ready-score .
+```
+
+For local development, clone the repository and run the CLI with Node.js:
 
 ```sh
 git clone <repository-url>
@@ -210,6 +224,7 @@ npm test
 npm run dev
 npm start
 npm run check
+npm pack --dry-run
 ```
 
 Keep the implementation split by responsibility:
@@ -236,6 +251,25 @@ The suite covers grade calculation, score bounds, scanner behavior, invalid `pac
 GitHub Actions runs the CI workflow on every push and pull request. The workflow tests Node.js 18, Node.js 20, and Node.js 22.
 
 CI runs `npm test` and validates the CLI with the default Korean output, explicit Korean output, English output, JSON output, Markdown output, both example projects, help output, and version output.
+
+## npm Publishing
+
+This project is prepared for future npm publishing, but this README does not claim that it is already published.
+
+Before publishing, run:
+
+```sh
+npm run check
+npm pack --dry-run
+```
+
+Do not publish until the package metadata, packed file list, version, and repository URL have been reviewed.
+
+## Release Notes
+
+- See `CHANGELOG.md` for release history.
+- See `docs/release-checklist.md` for the manual release checklist.
+- The first prepared public release is `v0.1.0`.
 
 ## Roadmap
 

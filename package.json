@@ -10,7 +10,8 @@
     "dev": "node bin/ai-ready-score.js .",
     "start": "node bin/ai-ready-score.js",
     "test": "node --test tests/*.test.js",
-    "check": "npm test"
+    "check": "npm test && node bin/ai-ready-score.js . && node bin/ai-ready-score.js . --lang ko && node bin/ai-ready-score.js . --lang en && node bin/ai-ready-score.js . --json && node bin/ai-ready-score.js . --markdown",
+    "prepublishOnly": "npm run check"
   },
   "keywords": [
     "ai",
@@ -19,6 +20,21 @@
     "readiness",
     "scoring"
   ],
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KoJiHyeok/ai-ready-score.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KoJiHyeok/ai-ready-score/issues"
+  },
+  "homepage": "https://github.com/KoJiHyeok/ai-ready-score#readme",
   "author": "",
   "license": "MIT",
   "engines": {
