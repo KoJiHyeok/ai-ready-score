@@ -20,12 +20,27 @@ const messages = {
       fail: 'fail',
       noRecommendations: 'No immediate next steps. Keep docs and tests current as the project changes.'
     },
+    markdown: {
+      title: 'AI-Ready Codebase Report',
+      target: 'Target',
+      score: 'Score',
+      grade: 'Grade',
+      categoryBreakdown: 'Category Breakdown',
+      passedChecks: 'Passed Checks',
+      failedChecks: 'Failed Checks',
+      warnings: 'Warnings',
+      recommendations: 'Recommended Next Steps',
+      category: 'Category',
+      points: 'Points',
+      check: 'Check'
+    },
     help: {
       description: 'Score how ready a local codebase is for AI coding agents.',
       usage: 'Usage:',
       options: 'Options:',
       examples: 'Examples:',
       json: 'Print valid JSON output',
+      markdown: 'Print a Markdown report',
       output: 'Write the report to a file',
       lang: 'Set human-readable output language: ko or en',
       help: 'Show this help text',
@@ -109,12 +124,27 @@ const messages = {
       fail: '실패',
       noRecommendations: '바로 필요한 다음 단계는 없습니다. 프로젝트가 변경될 때 문서와 테스트를 최신 상태로 유지하세요.'
     },
+    markdown: {
+      title: 'AI 준비도 분석 리포트',
+      target: '검사 대상',
+      score: '총점',
+      grade: '등급',
+      categoryBreakdown: '카테고리별 점수',
+      passedChecks: '통과한 항목',
+      failedChecks: '실패한 항목',
+      warnings: '경고',
+      recommendations: '추천 작업',
+      category: '카테고리',
+      points: '점수',
+      check: '항목'
+    },
     help: {
       description: '로컬 코드베이스가 AI 코딩 에이전트에 얼마나 준비되어 있는지 점수화합니다.',
       usage: '사용법:',
       options: '옵션:',
       examples: '예시:',
       json: '올바른 JSON을 출력합니다',
+      markdown: 'Markdown 리포트를 출력합니다',
       output: '보고서를 파일로 저장합니다',
       lang: '사람이 읽는 출력 언어를 설정합니다: ko 또는 en',
       help: '이 도움말을 표시합니다',
@@ -201,6 +231,14 @@ function getUnsupportedLanguageError(language) {
   return `지원하지 않는 언어입니다: ${language}. --lang ko 또는 --lang en을 사용하세요.`;
 }
 
+function getOutputFormatConflictError(language) {
+  if (normalizeLanguage(language) === 'en') {
+    return 'Select only one output format: --json or --markdown.';
+  }
+
+  return '출력 형식은 하나만 선택할 수 있습니다. --json 또는 --markdown 중 하나만 사용하세요.';
+}
+
 function translateWarning(warning, language) {
   if (normalizeLanguage(language) === 'en') {
     return warning;
@@ -229,6 +267,7 @@ module.exports = {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
   getMessages,
+  getOutputFormatConflictError,
   getUnsupportedLanguageError,
   isSupportedLanguage,
   normalizeLanguage,

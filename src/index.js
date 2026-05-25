@@ -3,7 +3,7 @@
 const { runCli } = require('./cli');
 const { scanProject } = require('./scanner');
 const { scoreProject, getGrade } = require('./scorer');
-const { formatTextReport, formatJsonReport } = require('./reporter');
+const { formatTextReport, formatMarkdownReport, formatJsonReport } = require('./reporter');
 const { rules, categories } = require('./rules');
 const { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } = require('./i18n');
 
@@ -13,6 +13,7 @@ module.exports = {
   scoreProject,
   getGrade,
   formatTextReport,
+  formatMarkdownReport,
   formatJsonReport,
   rules,
   categories,

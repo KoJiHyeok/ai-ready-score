@@ -4,10 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const { scanProject } = require('./scanner');
 const { scoreProject } = require('./scorer');
-const { formatTextReport, formatJsonReport } = require('./reporter');
+const { formatTextReport, formatMarkdownReport, formatJsonReport } = require('./reporter');
 const {
   DEFAULT_LANGUAGE,
   getMessages,
+  getOutputFormatConflictError,
   getUnsupportedLanguageError,
   isSupportedLanguage,
   normalizeLanguage
@@ -37,6 +38,7 @@ function getHelpText(language) {
     '',
     messages.options,
     `  --json              ${messages.json}`,
+    `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
     `  --lang <ko|en>      ${messages.lang}`,
     `  --help              ${messages.help}`,
@@ -48,6 +50,7 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js ./examples/good-project',
     '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
+    '  node bin/ai-ready-score.js . --markdown',
     '  node bin/ai-ready-score.js --output report.json'
   ].join('\n');
 }
@@ -56,6 +59,7 @@ function parseArgs(args) {
   const options = {
     targetPath: '.',
     json: false,
+    markdown: false,
     output: null,
     lang: DEFAULT_LANGUAGE,
     help: false,
@@ -79,6 +83,11 @@ function parseArgs(args) {
 
     if (arg === '--json') {
       options.json = true;
+      continue;
+    }
+
+    if (arg === '--markdown') {
+      options.markdown = true;
       continue;
     }
 
@@ -136,6 +145,10 @@ function parseArgs(args) {
     targetPathSet = true;
   }
 
+  if (options.json && options.markdown) {
+    options.errors.push(getOutputFormatConflictError(options.lang));
+  }
+
   return options;
 }
 
@@ -177,7 +190,17 @@ function runCli(args, environment) {
   try {
     const scan = scanProject(parsed.targetPath, { cwd });
     const result = scoreProject(scan);
-    const report = parsed.json || parsed.output ? formatJsonReport(result) : formatTextReport(result, { lang: parsed.lang });
+    let report;
+
+    if (parsed.json) {
+      report = formatJsonReport(result);
+    } else if (parsed.markdown) {
+      report = formatMarkdownReport(result, { lang: parsed.lang });
+    } else if (parsed.output) {
+      report = formatJsonReport(result);
+    } else {
+      report = formatTextReport(result, { lang: parsed.lang });
+    }
 
     if (parsed.output) {
       const outputPath = writeOutputFile(parsed.output, report, cwd);

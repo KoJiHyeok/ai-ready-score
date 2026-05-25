@@ -20,7 +20,8 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Supports Korean human-readable terminal output by default.
 - Supports English human-readable terminal output with `--lang en`.
 - Supports machine-readable JSON output.
-- Can write a JSON report to disk.
+- Supports GitHub-friendly Markdown report output.
+- Can write JSON or Markdown reports to disk.
 - Uses only Node.js built-in modules.
 - Runs on Node.js 18 or newer.
 
@@ -52,6 +53,9 @@ node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js --json
+node bin/ai-ready-score.js . --markdown
+node bin/ai-ready-score.js . --markdown --lang en
+node bin/ai-ready-score.js . --markdown --output report.md
 node bin/ai-ready-score.js --output report.json
 node bin/ai-ready-score.js --help
 node bin/ai-ready-score.js --version
@@ -60,7 +64,8 @@ node bin/ai-ready-score.js --version
 Options:
 
 - `--json`: print valid JSON.
-- `--output <file>`: write a JSON report to a file.
+- `--markdown`: print a Markdown report.
+- `--output <file>`: write the report to a file. Defaults to JSON unless `--markdown` is selected.
 - `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--help`: show usage help.
 - `--version`: show the package version.
@@ -80,6 +85,26 @@ ai-ready-score
 - package.json 스크립트: 20/20
 - AI 작업 친화성: 20/20
 - GitHub 및 보안 준비도: 8/15
+```
+
+## Example Markdown Output
+
+```md
+# AI 준비도 분석 리포트
+
+- **검사 대상:** /path/to/project
+- **총점:** 90/100
+- **등급:** A
+
+## 카테고리별 점수
+
+| 카테고리 | 점수 |
+| --- | ---: |
+| 문서화 | 25/25 |
+| 프로젝트 구조 | 17/20 |
+| package.json 스크립트 | 20/20 |
+| AI 작업 친화성 | 20/20 |
+| GitHub 및 보안 준비도 | 8/15 |
 ```
 
 ## Scoring Rubric
@@ -192,7 +217,7 @@ Keep the implementation split by responsibility:
 - `src/scanner.js` reads project files and folders.
 - `src/rules.js` defines the scoring rubric.
 - `src/scorer.js` calculates scores and grades.
-- `src/reporter.js` formats terminal and JSON output.
+- `src/reporter.js` formats terminal, Markdown, and JSON output.
 - `src/i18n.js` stores translated labels and messages for human-readable output.
 - `src/cli.js` parses options and connects the pieces.
 
@@ -204,13 +229,13 @@ Tests use the built-in `node:test` runner:
 npm test
 ```
 
-The suite covers grade calculation, score bounds, scanner behavior, invalid `package.json` handling, CLI help, Korean and English text output, JSON output, and scanning both example projects.
+The suite covers grade calculation, score bounds, scanner behavior, invalid `package.json` handling, CLI help, Korean and English text output, Markdown output, JSON output, and scanning both example projects.
 
 ## Quality Checks
 
 GitHub Actions runs the CI workflow on every push and pull request. The workflow tests Node.js 18, Node.js 20, and Node.js 22.
 
-CI runs `npm test` and validates the CLI with the default Korean output, explicit Korean output, English output, JSON output, both example projects, help output, and version output.
+CI runs `npm test` and validates the CLI with the default Korean output, explicit Korean output, English output, JSON output, Markdown output, both example projects, help output, and version output.
 
 ## Roadmap
 

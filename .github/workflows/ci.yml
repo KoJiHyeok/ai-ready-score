@@ -41,6 +41,15 @@ jobs:
       - name: Validate JSON output
         run: node bin/ai-ready-score.js . --json
 
+      - name: Validate Markdown output
+        run: node bin/ai-ready-score.js . --markdown
+
+      - name: Validate Markdown Korean output
+        run: node bin/ai-ready-score.js . --markdown --lang ko
+
+      - name: Validate Markdown English output
+        run: node bin/ai-ready-score.js . --markdown --lang en
+
       - name: Validate CLI on good example
         run: node bin/ai-ready-score.js ./examples/good-project
 

@@ -24,6 +24,7 @@ test('--help works', () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /사용법:/);
   assert.match(result.stdout, /--json/);
+  assert.match(result.stdout, /--markdown/);
   assert.match(result.stdout, /--lang <ko\|en>/);
 });
 
@@ -113,6 +114,61 @@ test('unsupported --lang returns a friendly error', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /지원하지 않는 언어입니다: ja/);
   assert.match(result.stderr, /--lang ko 또는 --lang en/);
+});
+
+test('--markdown produces Korean Markdown output by default', () => {
+  const result = runCli(['.', '--markdown']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /^# AI 준비도 분석 리포트/m);
+  assert.match(result.stdout, /\*\*검사 대상:\*\*/);
+  assert.match(result.stdout, /## 카테고리별 점수/);
+  assert.match(result.stdout, /\| 문서화 \| 25\/25 \|/);
+});
+
+test('--markdown --lang ko produces Korean Markdown output', () => {
+  const result = runCli(['.', '--markdown', '--lang', 'ko']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /^# AI 준비도 분석 리포트/m);
+  assert.match(result.stdout, /## 통과한 항목/);
+  assert.match(result.stdout, /README\.md가 있습니다\./);
+});
+
+test('--markdown --lang en produces English Markdown output', () => {
+  const result = runCli(['.', '--markdown', '--lang', 'en']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /^# AI-Ready Codebase Report/m);
+  assert.match(result.stdout, /\*\*Target:\*\*/);
+  assert.match(result.stdout, /## Category Breakdown/);
+  assert.match(result.stdout, /\| Documentation \| 25\/25 \|/);
+});
+
+test('--markdown --output writes a Markdown report', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-markdown-'));
+  const outputPath = path.join(tempPath, 'report.md');
+
+  try {
+    const result = runCli(['.', '--markdown', '--output', outputPath]);
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /Report written to/);
+
+    const markdown = readFileSync(outputPath, 'utf8');
+    assert.match(markdown, /^# AI 준비도 분석 리포트/m);
+    assert.match(markdown, /## 추천 작업/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--json and --markdown cannot be combined', () => {
+  const result = runCli(['.', '--json', '--markdown']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /출력 형식은 하나만 선택할 수 있습니다/);
+  assert.match(result.stderr, /--json 또는 --markdown/);
 });
 
 test('explicit target path is parsed separately from options', () => {
