@@ -1,6 +1,6 @@
 {
   "name": "ai-ready-score",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Score how ready a local codebase is for AI coding agents.",
   "main": "src/index.js",
   "bin": {
@@ -26,6 +26,7 @@
     "docs/release-checklist.md",
     "docs/release-notes/",
     "README.md",
+    "AGENTS.md",
     "CHANGELOG.md",
     "LICENSE"
   ],

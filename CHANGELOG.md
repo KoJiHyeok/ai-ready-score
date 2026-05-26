@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 모든 주요 변경 사항은 이 파일에 기록합니다.
 
+## v0.4.1
+
+### English
+
+Patch release for packaged agent instructions.
+
+- Included `AGENTS.md` in the npm package file allowlist so the condensed future-agent instructions ship with the package.
+- Confirmed README remains current for npm usage, `--init`, `--min-score`, JSON, Markdown, and bilingual output.
+
+### 한국어
+
+에이전트 지침 패키징을 위한 패치 릴리스입니다.
+
+- 압축된 향후 에이전트 지침이 패키지에 포함되도록 npm 패키지 파일 allowlist에 `AGENTS.md`를 추가했습니다.
+- README가 npm 사용법, `--init`, `--min-score`, JSON, Markdown, bilingual 출력 기준으로 최신 상태인지 확인했습니다.
+
 ## v0.4.0
 
 ### English

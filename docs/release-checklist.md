@@ -4,6 +4,42 @@ Use this checklist before publishing a public release.
 
 공개 릴리스를 배포하기 전에 이 체크리스트를 사용하세요.
 
+## v0.4.1
+
+### English
+
+1. Confirm `package.json` version is `0.4.1`.
+2. Confirm `package.json.files` includes `AGENTS.md`.
+3. Confirm README is current for npm usage, `--init`, `--min-score`, JSON, Markdown, and bilingual output.
+4. Confirm `CHANGELOG.md` has a bilingual `v0.4.1` entry.
+5. Confirm `docs/release-notes/v0.4.1.md` is ready for the GitHub Release body.
+6. Run `npm test`.
+7. Run `npm run check`.
+8. Run `npm pack --dry-run` and confirm `AGENTS.md` is included.
+9. Commit the release preparation changes.
+10. Create the tag with `git tag v0.4.1`.
+11. Push the branch with `git push origin main`.
+12. Push the tag with `git push origin v0.4.1`.
+13. Run `npm publish --access public` only because this task explicitly requests release and publish.
+14. Verify the published package with `npx ai-ready-score@latest --version`.
+
+### 한국어
+
+1. `package.json` 버전이 `0.4.1`인지 확인합니다.
+2. `package.json.files`에 `AGENTS.md`가 포함되어 있는지 확인합니다.
+3. README가 npm 사용법, `--init`, `--min-score`, JSON, Markdown, bilingual 출력 기준으로 최신 상태인지 확인합니다.
+4. `CHANGELOG.md`에 bilingual `v0.4.1` 항목이 있는지 확인합니다.
+5. `docs/release-notes/v0.4.1.md`가 GitHub Release 본문으로 사용할 준비가 되었는지 확인합니다.
+6. `npm test`를 실행합니다.
+7. `npm run check`를 실행합니다.
+8. `npm pack --dry-run`을 실행하고 `AGENTS.md`가 포함되는지 확인합니다.
+9. 릴리스 준비 변경 사항을 커밋합니다.
+10. `git tag v0.4.1`으로 태그를 생성합니다.
+11. `git push origin main`으로 브랜치를 push합니다.
+12. `git push origin v0.4.1`으로 태그를 push합니다.
+13. 이 작업이 명시적으로 release 및 publish를 요청했으므로 `npm publish --access public`을 실행합니다.
+14. `npx ai-ready-score@latest --version`으로 배포된 패키지를 검증합니다.
+
 ## v0.4.0
 
 ### English
