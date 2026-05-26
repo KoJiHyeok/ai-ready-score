@@ -2,9 +2,17 @@
 
 const fs = require('fs');
 const path = require('path');
+const { initializeProject } = require('./initializer');
 const { scanProject } = require('./scanner');
 const { scoreProject } = require('./scorer');
-const { formatTextReport, formatMarkdownReport, formatJsonReport } = require('./reporter');
+const {
+  formatTextReport,
+  formatMarkdownReport,
+  formatJsonReport,
+  formatInitTextReport,
+  formatInitMarkdownReport,
+  formatInitJsonReport
+} = require('./reporter');
 const {
   DEFAULT_LANGUAGE,
   getMessages,
@@ -37,6 +45,7 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js [path] [options]',
     '',
     messages.options,
+    `  --init              ${messages.init}`,
     `  --json              ${messages.json}`,
     `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
@@ -47,6 +56,8 @@ function getHelpText(language) {
     messages.examples,
     '  node bin/ai-ready-score.js',
     '  node bin/ai-ready-score.js .',
+    '  node bin/ai-ready-score.js --init',
+    '  node bin/ai-ready-score.js ./some-project --init',
     '  node bin/ai-ready-score.js ./examples/good-project',
     '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
@@ -58,6 +69,7 @@ function getHelpText(language) {
 function parseArgs(args) {
   const options = {
     targetPath: '.',
+    init: false,
     json: false,
     markdown: false,
     output: null,
@@ -83,6 +95,11 @@ function parseArgs(args) {
 
     if (arg === '--json') {
       options.json = true;
+      continue;
+    }
+
+    if (arg === '--init') {
+      options.init = true;
       continue;
     }
 
@@ -188,6 +205,28 @@ function runCli(args, environment) {
   }
 
   try {
+    if (parsed.init) {
+      const initResult = initializeProject(parsed.targetPath, { cwd });
+      let initReport;
+
+      if (parsed.json || (parsed.output && !parsed.markdown)) {
+        initReport = formatInitJsonReport(initResult);
+      } else if (parsed.markdown) {
+        initReport = formatInitMarkdownReport(initResult, { lang: parsed.lang });
+      } else {
+        initReport = formatInitTextReport(initResult, { lang: parsed.lang });
+      }
+
+      if (parsed.output) {
+        const outputPath = writeOutputFile(parsed.output, initReport, cwd);
+        stdout.write(`Report written to ${outputPath}\n`);
+        return 0;
+      }
+
+      stdout.write(parsed.json ? `${initReport}\n` : initReport);
+      return 0;
+    }
+
     const scan = scanProject(parsed.targetPath, { cwd });
     const result = scoreProject(scan);
     let report;

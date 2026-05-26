@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { mkdtempSync, readFileSync, rmSync } = require('node:fs');
+const { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { spawnSync } = require('node:child_process');
 const os = require('node:os');
 const path = require('node:path');
@@ -23,6 +23,7 @@ test('--help works', () => {
 
   assert.equal(result.status, 0);
   assert.match(result.stdout, /사용법:/);
+  assert.match(result.stdout, /--init/);
   assert.match(result.stdout, /--json/);
   assert.match(result.stdout, /--markdown/);
   assert.match(result.stdout, /--lang <ko\|en>/);
@@ -58,6 +59,168 @@ test('--json returns parseable JSON', () => {
   assert.ok(Array.isArray(parsed.checks));
   assert.ok(Array.isArray(parsed.recommendations));
   assert.ok(Array.isArray(parsed.warnings));
+});
+
+test('--init creates missing starter files in the current directory', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-'));
+
+  try {
+    const result = runCli(['--init', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /AI-ready initialization is complete\./);
+    assert.match(result.stdout, /Created items:/);
+    assert.ok(existsSync(path.join(tempPath, 'AGENTS.md')));
+    assert.ok(existsSync(path.join(tempPath, '.env.example')));
+    assert.ok(existsSync(path.join(tempPath, 'CONTRIBUTING.md')));
+    assert.ok(existsSync(path.join(tempPath, 'docs')));
+    assert.ok(existsSync(path.join(tempPath, 'docs', 'README.md')));
+    assert.ok(existsSync(path.join(tempPath, 'examples')));
+    assert.ok(existsSync(path.join(tempPath, 'examples', 'README.md')));
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init works with an explicit target path', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-target-'));
+  const targetPath = path.join(tempPath, 'project');
+
+  try {
+    mkdirSync(targetPath);
+
+    const result = runCli([targetPath, '--init', '--lang', 'en']);
+
+    assert.equal(result.status, 0);
+    assert.ok(existsSync(path.join(targetPath, 'AGENTS.md')));
+    assert.ok(existsSync(path.join(targetPath, 'docs', 'README.md')));
+    assert.ok(result.stdout.includes(targetPath));
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init does not overwrite existing files', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-existing-'));
+  const agentsPath = path.join(tempPath, 'AGENTS.md');
+
+  try {
+    writeFileSync(agentsPath, 'existing instructions\n', 'utf8');
+
+    const result = runCli(['--init', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.equal(readFileSync(agentsPath, 'utf8'), 'existing instructions\n');
+    assert.match(result.stdout, /AGENTS\.md already exists/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init reports skipped files and folders when nothing is created', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-skip-'));
+
+  try {
+    writeFileSync(path.join(tempPath, 'AGENTS.md'), 'existing\n', 'utf8');
+    writeFileSync(path.join(tempPath, '.env.example'), 'EXAMPLE=true\n', 'utf8');
+    writeFileSync(path.join(tempPath, 'CONTRIBUTING.md'), 'existing\n', 'utf8');
+    mkdirSync(path.join(tempPath, 'docs'));
+    mkdirSync(path.join(tempPath, 'examples'));
+
+    const result = runCli(['--init', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /Nothing to create\. The basic structure is already present\./);
+    assert.match(result.stdout, /Skipped items:/);
+    assert.match(result.stdout, /AGENTS\.md already exists/);
+    assert.match(result.stdout, /docs already exists/);
+    assert.match(result.stdout, /examples already exists/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init --lang ko outputs Korean text', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-ko-'));
+
+  try {
+    const result = runCli(['--init', '--lang', 'ko'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /AI-ready 초기화가 완료되었습니다\./);
+    assert.match(result.stdout, /생성된 항목:/);
+    assert.match(result.stdout, /건너뛴 항목:/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init --lang en outputs English text', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-en-'));
+
+  try {
+    const result = runCli(['--init', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /AI-ready initialization is complete\./);
+    assert.match(result.stdout, /Created items:/);
+    assert.match(result.stdout, /Skipped items:/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init --json returns parseable JSON', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-json-'));
+
+  try {
+    const result = runCli(['--init', '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.equal(parsed.targetPath, tempPath);
+    assert.ok(parsed.created.some((item) => item.path === 'AGENTS.md' && item.type === 'file'));
+    assert.ok(parsed.created.some((item) => item.path === 'docs/README.md' && item.type === 'file'));
+    assert.deepEqual(parsed.skipped, []);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init --markdown returns a Markdown initialization report', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-markdown-'));
+
+  try {
+    const result = runCli(['--init', '--markdown', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /^# AI-Ready Initialization Report/m);
+    assert.match(result.stdout, /## Created items/);
+    assert.match(result.stdout, /- AGENTS\.md/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--init --json --output writes an initialization JSON report', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-init-output-'));
+  const targetPath = path.join(tempPath, 'project');
+  const outputPath = path.join(tempPath, 'init-report.json');
+
+  try {
+    mkdirSync(targetPath);
+
+    const result = runCli([targetPath, '--init', '--json', '--output', outputPath]);
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /Report written to/);
+
+    const parsed = JSON.parse(readFileSync(outputPath, 'utf8'));
+    assert.equal(parsed.targetPath, targetPath);
+    assert.ok(parsed.created.some((item) => item.path === 'CONTRIBUTING.md'));
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
 });
 
 test('--output writes a JSON report', () => {
@@ -176,6 +339,15 @@ test('explicit target path is parsed separately from options', () => {
 
   assert.equal(parsed.targetPath, './examples/good-project');
   assert.equal(parsed.json, true);
+  assert.equal(parsed.lang, 'en');
+  assert.equal(parsed.errors.length, 0);
+});
+
+test('--init is parsed separately from target path and options', () => {
+  const parsed = parseArgs(['./examples/good-project', '--init', '--lang', 'en']);
+
+  assert.equal(parsed.targetPath, './examples/good-project');
+  assert.equal(parsed.init, true);
   assert.equal(parsed.lang, 'en');
   assert.equal(parsed.errors.length, 0);
 });

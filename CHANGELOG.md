@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 모든 주요 변경 사항은 이 파일에 기록합니다.
 
+## Unreleased
+
+### English
+
+Planned v0.2.0 work.
+
+- Added `--init` to create missing starter AI-readiness files and folders without overwriting existing files.
+- Added text, JSON, and Markdown initialization reports.
+- Added initializer tests for creation, skipped existing files, Korean and English output, JSON output, Markdown output, and output file writing.
+
+### 한국어
+
+v0.2.0 예정 작업입니다.
+
+- 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성하는 `--init`을 추가했습니다.
+- 텍스트, JSON, Markdown 초기화 리포트를 추가했습니다.
+- 파일 생성, 기존 파일 건너뛰기, 한국어와 영어 출력, JSON 출력, Markdown 출력, 출력 파일 저장을 검증하는 초기화 테스트를 추가했습니다.
+
 ## v0.1.0
 
 ### English
@@ -21,7 +39,8 @@ Initial public MVP release preparation.
 - Added sensitive root file warnings.
 - Added example good and poor projects.
 - Added GitHub Actions CI for Node.js 18, Node.js 20, and Node.js 22.
-- Added npm publishing readiness metadata, package file allowlist, and prepublish validation.
+- `ai-ready-score` is now available on npm.
+- Added npm package metadata, package file allowlist, and prepublish validation.
 
 ### 한국어
 
@@ -38,4 +57,5 @@ Initial public MVP release preparation.
 - 프로젝트 루트의 민감 파일 경고를 추가했습니다.
 - 좋은 예시 프로젝트와 부족한 예시 프로젝트를 추가했습니다.
 - Node.js 18, Node.js 20, Node.js 22에서 실행되는 GitHub Actions CI를 추가했습니다.
-- npm 배포 준비를 위한 메타데이터, 패키지 파일 allowlist, prepublish 검증을 추가했습니다.
+- `ai-ready-score`는 이제 npm에서 사용할 수 있습니다.
+- npm 패키지 메타데이터, 패키지 파일 allowlist, prepublish 검증을 추가했습니다.

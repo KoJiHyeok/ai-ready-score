@@ -6,6 +6,10 @@ function formatJsonReport(result) {
   return JSON.stringify(result, null, 2);
 }
 
+function formatInitJsonReport(result) {
+  return JSON.stringify(result, null, 2);
+}
+
 function getCategoryName(category, messages) {
   return messages.categories[category.id] || category.name;
 }
@@ -36,6 +40,92 @@ function getUniqueRecommendations(failedChecks, messages) {
 
 function escapeMarkdownTableCell(value) {
   return String(value).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+}
+
+function formatSkippedItem(item, messages) {
+  if (item.reason === 'already exists') {
+    return `${item.path} ${messages.init.alreadyExists}`;
+  }
+
+  return item.path;
+}
+
+function formatInitTextReport(result, options) {
+  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
+  const messages = getMessages(language);
+  const init = messages.init;
+  const lines = [];
+
+  lines.push(init.completed);
+  lines.push('');
+  lines.push(`${init.targetPath}: ${result.targetPath}`);
+  lines.push('');
+
+  if (result.created.length === 0) {
+    lines.push(init.nothingCreated);
+    lines.push('');
+  }
+
+  lines.push(`${init.createdItems}:`);
+  if (result.created.length === 0) {
+    lines.push(`- ${init.none}`);
+  } else {
+    result.created.forEach((item) => {
+      lines.push(`- ${item.path}`);
+    });
+  }
+
+  lines.push('');
+  lines.push(`${init.skippedItems}:`);
+  if (result.skipped.length === 0) {
+    lines.push(`- ${init.none}`);
+  } else {
+    result.skipped.forEach((item) => {
+      lines.push(`- ${formatSkippedItem(item, messages)}`);
+    });
+  }
+
+  return `${lines.join('\n')}\n`;
+}
+
+function formatInitMarkdownReport(result, options) {
+  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
+  const messages = getMessages(language);
+  const init = messages.init;
+  const lines = [];
+
+  lines.push(`# ${init.markdownTitle}`);
+  lines.push('');
+  lines.push(`- **${init.targetPath}:** ${result.targetPath}`);
+  lines.push('');
+
+  if (result.created.length === 0) {
+    lines.push(init.nothingCreated);
+    lines.push('');
+  }
+
+  lines.push(`## ${init.createdItems}`);
+  lines.push('');
+  if (result.created.length === 0) {
+    lines.push(`- ${init.none}`);
+  } else {
+    result.created.forEach((item) => {
+      lines.push(`- ${item.path}`);
+    });
+  }
+
+  lines.push('');
+  lines.push(`## ${init.skippedItems}`);
+  lines.push('');
+  if (result.skipped.length === 0) {
+    lines.push(`- ${init.none}`);
+  } else {
+    result.skipped.forEach((item) => {
+      lines.push(`- ${formatSkippedItem(item, messages)}`);
+    });
+  }
+
+  return `${lines.join('\n')}\n`;
 }
 
 function formatTextReport(result, options) {
@@ -177,5 +267,8 @@ function formatMarkdownReport(result, options) {
 module.exports = {
   formatTextReport,
   formatMarkdownReport,
-  formatJsonReport
+  formatJsonReport,
+  formatInitTextReport,
+  formatInitMarkdownReport,
+  formatInitJsonReport
 };

@@ -31,22 +31,27 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Supports machine-readable JSON output with `--json`.
 - Supports GitHub-friendly Markdown report output with `--markdown`.
 - Can write JSON or Markdown reports to disk with `--output`.
+- Can initialize missing AI-readiness starter files and folders with `--init`.
 - Warns about obvious sensitive files in the project root.
 - Uses only Node.js built-in modules.
 - Runs on Node.js 18 or newer.
 
 ## Installation
 
-This project is prepared for future npm publishing, but this README does not claim that it is already published.
+`ai-ready-score` is available on npm.
 
-Run without installing after a future npm publish:
+Run without installing:
 
 ```sh
 npx ai-ready-score .
+npx ai-ready-score --init
+npx ai-ready-score ./my-project --init
+npx ai-ready-score . --lang en
+npx ai-ready-score . --json
 npx ai-ready-score . --markdown
 ```
 
-Install globally after a future npm publish:
+Install globally:
 
 ```sh
 npm install -g ai-ready-score
@@ -82,6 +87,8 @@ ai-ready-score .
 ```sh
 node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
+node bin/ai-ready-score.js --init
+node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --lang ko
@@ -97,6 +104,7 @@ node bin/ai-ready-score.js --version
 
 Options:
 
+- `--init`: create missing starter AI-readiness files and folders without overwriting existing files.
 - `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--json`: print valid JSON for automation.
 - `--markdown`: print a Markdown report.
@@ -135,6 +143,29 @@ node bin/ai-ready-score.js . --markdown --output report.md
 ```
 
 Only one machine/report output format can be selected at a time. `--json --markdown` returns a friendly error.
+
+## Initialization
+
+Use `--init` to add missing starter files and folders that make a project easier for AI coding agents to understand:
+
+```sh
+npx ai-ready-score --init
+npx ai-ready-score ./my-project --init
+node bin/ai-ready-score.js --init
+node bin/ai-ready-score.js ./my-project --init
+```
+
+`--init` creates these items only when they are missing:
+
+- `AGENTS.md`
+- `.env.example`
+- `CONTRIBUTING.md`
+- `docs/`
+- `docs/README.md` when `docs/` is newly created
+- `examples/`
+- `examples/README.md` when `examples/` is newly created
+
+Existing files and folders are never overwritten. If an item already exists, the command reports it as skipped. `--init --json` returns a machine-readable initialization result, and `--init --markdown` prints a Markdown initialization report.
 
 ## Scoring rubric
 
@@ -319,7 +350,7 @@ GitHub Actions runs CI on push and pull request with Node.js 18, Node.js 20, and
 - Documentation checks use keyword matching.
 - It does not inspect source code quality or test coverage.
 - It does not make network requests or call AI APIs.
-- npm publishing is prepared for the future, but should not be assumed complete until the package is actually published.
+- The npm package is available, but release tags and GitHub Release notes are still maintained manually.
 
 ## Contributing
 
@@ -353,22 +384,27 @@ AI 코딩 에이전트는 문서가 명확하고, 구조가 예측 가능하며,
 - `--json`으로 자동화에 적합한 JSON을 출력합니다.
 - `--markdown`으로 GitHub에 붙여 넣기 좋은 Markdown 리포트를 출력합니다.
 - `--output`으로 JSON 또는 Markdown 리포트를 파일로 저장할 수 있습니다.
+- `--init`으로 AI 작업 친화성을 높이는 기본 파일과 폴더를 생성할 수 있습니다.
 - 프로젝트 루트의 명백한 민감 파일을 경고합니다.
 - Node.js 기본 모듈만 사용합니다.
 - Node.js 18 이상에서 실행됩니다.
 
 ## 설치 방법
 
-이 프로젝트는 향후 npm 배포를 준비해 두었지만, 아직 npm에 배포되었다고 문서에서 주장하지 않습니다.
+`ai-ready-score`는 npm에서 사용할 수 있습니다.
 
-향후 npm에 배포된 뒤에는 설치 없이 다음처럼 실행할 수 있습니다.
+설치 없이 다음처럼 실행할 수 있습니다.
 
 ```sh
 npx ai-ready-score .
+npx ai-ready-score --init
+npx ai-ready-score ./my-project --init
+npx ai-ready-score . --lang en
+npx ai-ready-score . --json
 npx ai-ready-score . --markdown
 ```
 
-향후 npm에 배포된 뒤 전역 설치는 다음처럼 사용할 수 있습니다.
+전역 설치는 다음처럼 사용할 수 있습니다.
 
 ```sh
 npm install -g ai-ready-score
@@ -404,6 +440,8 @@ ai-ready-score .
 ```sh
 node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
+node bin/ai-ready-score.js --init
+node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --lang ko
@@ -419,6 +457,7 @@ node bin/ai-ready-score.js --version
 
 옵션:
 
+- `--init`: 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성합니다.
 - `--lang <ko|en>`: 사람이 읽는 출력 언어를 설정합니다. 기본값은 `ko`입니다.
 - `--json`: 자동화에 사용할 수 있는 올바른 JSON을 출력합니다.
 - `--markdown`: Markdown 리포트를 출력합니다.
@@ -457,6 +496,29 @@ node bin/ai-ready-score.js . --markdown --output report.md
 ```
 
 리포트 출력 형식은 한 번에 하나만 선택할 수 있습니다. `--json --markdown`을 함께 사용하면 친절한 오류 메시지를 출력합니다.
+
+## 초기화
+
+`--init`을 사용하면 AI 코딩 에이전트가 프로젝트를 더 쉽게 이해할 수 있도록 기본 파일과 폴더를 추가할 수 있습니다.
+
+```sh
+npx ai-ready-score --init
+npx ai-ready-score ./my-project --init
+node bin/ai-ready-score.js --init
+node bin/ai-ready-score.js ./my-project --init
+```
+
+`--init`은 다음 항목이 없을 때만 생성합니다.
+
+- `AGENTS.md`
+- `.env.example`
+- `CONTRIBUTING.md`
+- `docs/`
+- `docs/`를 새로 만들 때 `docs/README.md`
+- `examples/`
+- `examples/`를 새로 만들 때 `examples/README.md`
+
+기존 파일과 폴더는 절대 덮어쓰지 않습니다. 이미 있는 항목은 건너뛴 항목으로 보고합니다. `--init --json`은 자동화에 사용할 수 있는 초기화 결과를 반환하고, `--init --markdown`은 Markdown 초기화 리포트를 출력합니다.
 
 ## 점수 기준
 
@@ -641,7 +703,7 @@ GitHub Actions는 push와 pull request에서 Node.js 18, Node.js 20, Node.js 22�
 - 문서 점검은 키워드 매칭을 사용합니다.
 - 소스 코드 품질이나 테스트 커버리지는 검사하지 않습니다.
 - 네트워크 요청이나 AI API 호출을 하지 않습니다.
-- npm 배포는 향후를 위해 준비되어 있지만, 실제 배포 전까지는 배포 완료로 가정하면 안 됩니다.
+- npm 패키지는 사용할 수 있지만, 릴리스 태그와 GitHub Release 노트는 수동으로 관리합니다.
 
 ## 기여 방법
 

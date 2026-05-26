@@ -20,6 +20,17 @@ const messages = {
       fail: 'fail',
       noRecommendations: 'No immediate next steps. Keep docs and tests current as the project changes.'
     },
+    init: {
+      title: 'ai-ready-score initialization',
+      markdownTitle: 'AI-Ready Initialization Report',
+      targetPath: 'Target path',
+      completed: 'AI-ready initialization is complete.',
+      createdItems: 'Created items',
+      skippedItems: 'Skipped items',
+      nothingCreated: 'Nothing to create. The basic structure is already present.',
+      none: 'None',
+      alreadyExists: 'already exists'
+    },
     markdown: {
       title: 'AI-Ready Codebase Report',
       target: 'Target',
@@ -41,6 +52,7 @@ const messages = {
       examples: 'Examples:',
       json: 'Print valid JSON output',
       markdown: 'Print a Markdown report',
+      init: 'Create missing starter AI-readiness files and folders',
       output: 'Write the report to a file',
       lang: 'Set human-readable output language: ko or en',
       help: 'Show this help text',
@@ -109,6 +121,17 @@ const messages = {
     }
   },
   ko: {
+    init: {
+      title: 'ai-ready-score 초기화',
+      markdownTitle: 'AI-ready 초기화 리포트',
+      targetPath: '대상 경로',
+      completed: 'AI-ready 초기화가 완료되었습니다.',
+      createdItems: '생성된 항목',
+      skippedItems: '건너뛴 항목',
+      nothingCreated: '생성할 항목이 없습니다. 이미 기본 구조가 준비되어 있습니다.',
+      none: '없음',
+      alreadyExists: '이미 있습니다'
+    },
     report: {
       title: 'ai-ready-score',
       targetPath: '대상 경로',
@@ -145,6 +168,7 @@ const messages = {
       examples: '예시:',
       json: '올바른 JSON을 출력합니다',
       markdown: 'Markdown 리포트를 출력합니다',
+      init: 'AI 작업 준비를 위한 기본 파일과 폴더를 생성합니다',
       output: '보고서를 파일로 저장합니다',
       lang: '사람이 읽는 출력 언어를 설정합니다: ko 또는 en',
       help: '이 도움말을 표시합니다',

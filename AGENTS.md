@@ -25,6 +25,8 @@ Keep scanner, scorer, reporter, and CLI logic separate:
 - `src/scorer.js` should calculate scores, grades, checks, and recommendations.
 - `src/reporter.js` should format text, Markdown, and JSON output.
 - `src/i18n.js` should store translated labels and messages for human-readable output.
+- `src/initializer.js` should create missing starter files and folders for `--init`.
+- `src/templates.js` should store starter file templates used by `--init`.
 - `src/cli.js` should parse CLI options, run the scan, and write output.
 
 ## Runtime and Tooling
@@ -62,6 +64,19 @@ npm run dev
 npm run check
 ```
 
+The package is published on npm, so public usage examples may include:
+
+```sh
+npx ai-ready-score .
+npx ai-ready-score . --lang en
+npx ai-ready-score . --json
+npx ai-ready-score . --markdown
+npm install -g ai-ready-score
+ai-ready-score .
+```
+
+`ai-ready-score`는 npm에서 사용할 수 있으므로 README와 릴리스 노트의 설치 예시는 실제 npm 사용법을 기준으로 작성해야 합니다.
+
 ## How to Test
 
 Run the full node:test suite:
@@ -88,7 +103,7 @@ GitHub Actions CI must keep passing for future changes. CI runs tests and CLI va
 
 ## Documentation Guidelines
 
-- README.md and release documentation are bilingual in English and Korean.
+- README.md, release notes, and release documentation are bilingual in English and Korean.
 - When user-facing behavior changes, update both English and Korean documentation in the same change.
 - Do not leave Korean docs outdated when English docs change.
 - Do not leave English docs outdated when Korean docs change.
@@ -129,22 +144,32 @@ Grades:
 - Update score expectations in `tests/scorer.test.js`.
 - Add scanner coverage in `tests/scanner.test.js`.
 - Add CLI coverage in `tests/cli.test.js`.
+- Change `--init` templates in `src/templates.js`.
 - Update README.md and this file when behavior changes.
+
+## Initializer Behavior
+
+- `--init` must never overwrite existing user files or folders.
+- Existing files and folders must be reported as skipped.
+- Keep initializer logic separate from scanner and scorer logic.
+- When changing starter templates, update tests that verify generated files and user-facing init output.
+- Keep `--init --json` parseable and keep `--init --markdown` stable enough for saved reports.
 
 ## Do Not Do
 
 - Do not add external npm dependencies.
 - Do not add AI API calls.
 - Do not add network requests.
-- Do not publish to npm without explicit user approval.
+- Do not publish a new npm version without explicit user approval.
 - Do not change version numbers casually; version changes should match an intentional release plan.
 - Do not combine scanner, scorer, reporter, and CLI logic into one file.
 - Do not change scoring rules without updating tests.
+- Do not make `--init` overwrite user files.
 - Do not rely on shell-specific path separators.
 
 ## npm Publishing Checklist
 
-Before preparing a release for npm:
+Before preparing a new npm release:
 
 - Confirm `package.json` has correct `name`, `version`, `description`, `main`, `bin`, `keywords`, `license`, `repository`, `bugs`, `homepage`, and `files`.
 - Confirm `bin.ai-ready-score` points to `bin/ai-ready-score.js`.
@@ -152,7 +177,7 @@ Before preparing a release for npm:
 - Run `npm run check`.
 - Run `npm pack --dry-run` and inspect the packed file list.
 - Confirm generated reports such as `report.json` and `report.md` are not included unless intentionally needed.
-- Get explicit user approval before running `npm publish`.
+- Get explicit user approval before running `npm publish` for any future release.
 
 ## Public Release Checklist
 
@@ -171,7 +196,7 @@ Before preparing a public GitHub/npm release:
 - Create the tag only when requested: `git tag v0.1.0`.
 - Push the branch only when requested: `git push origin main`.
 - Push the tag only when requested: `git push origin v0.1.0`.
-- Publish to npm only after explicit user approval.
+- Publish any future npm version only after explicit user approval.
 
 ## Before Submitting Changes
 
