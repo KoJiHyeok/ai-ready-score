@@ -24,6 +24,7 @@ test('--help works', () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /사용법:/);
   assert.match(result.stdout, /--init/);
+  assert.match(result.stdout, /--min-score <0-100>/);
   assert.match(result.stdout, /--json/);
   assert.match(result.stdout, /--markdown/);
   assert.match(result.stdout, /--lang <ko\|en>/);
@@ -59,6 +60,77 @@ test('--json returns parseable JSON', () => {
   assert.ok(Array.isArray(parsed.checks));
   assert.ok(Array.isArray(parsed.recommendations));
   assert.ok(Array.isArray(parsed.warnings));
+});
+
+test('--min-score passes when score is high enough', () => {
+  const result = runCli(['.', '--min-score', '80', '--lang', 'en']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Score threshold: Passed score threshold: 100\/100 is at least 80\./);
+});
+
+test('--min-score exits with code 1 when score is too low', () => {
+  const result = runCli(['./examples/poor-project', '--min-score', '80', '--lang', 'en']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /Score threshold: Failed score threshold:/);
+  assert.match(result.stdout, /is below 80\./);
+});
+
+test('invalid --min-score value fails with a friendly error', () => {
+  const result = runCli(['.', '--lang', 'en', '--min-score', 'nope']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--min-score requires a number from 0 to 100/);
+  assert.match(result.stderr, /Received: nope/);
+});
+
+test('--min-score below 0 fails with a friendly error', () => {
+  const result = runCli(['.', '--lang', 'en', '--min-score', '-1']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--min-score requires a number from 0 to 100/);
+  assert.match(result.stderr, /Received: -1/);
+});
+
+test('--min-score above 100 fails with a friendly error', () => {
+  const result = runCli(['.', '--lang', 'en', '--min-score', '101']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--min-score requires a number from 0 to 100/);
+  assert.match(result.stderr, /Received: 101/);
+});
+
+test('--min-score with --lang ko prints Korean threshold message', () => {
+  const result = runCli(['.', '--min-score', '80', '--lang', 'ko']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /점수 기준: 점수 기준 통과: 100\/100점이 최소 80점 이상입니다\./);
+});
+
+test('--min-score with --lang en prints English threshold message', () => {
+  const result = runCli(['.', '--min-score', '80', '--lang', 'en']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Score threshold: Passed score threshold: 100\/100 is at least 80\./);
+});
+
+test('--min-score with --json includes threshold data', () => {
+  const result = runCli(['.', '--min-score', '80', '--json']);
+  const parsed = JSON.parse(result.stdout);
+
+  assert.equal(result.status, 0);
+  assert.deepEqual(parsed.threshold, {
+    minScore: 80,
+    passed: true
+  });
+});
+
+test('--min-score cannot be combined with --init', () => {
+  const result = runCli(['--lang', 'en', '--init', '--min-score', '80']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--min-score cannot be used with --init/);
 });
 
 test('--init creates missing starter files in the current directory', () => {

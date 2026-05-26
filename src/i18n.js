@@ -10,6 +10,9 @@ const messages = {
       targetPath: 'Target path',
       totalScore: 'Total score',
       grade: 'Grade',
+      threshold: 'Score threshold',
+      thresholdPassed: 'Passed score threshold: {score}/{maxScore} is at least {minScore}.',
+      thresholdFailed: 'Failed score threshold: {score}/{maxScore} is below {minScore}.',
       categoryBreakdown: 'Category breakdown',
       passedChecks: 'Passed checks',
       failedChecks: 'Failed checks',
@@ -53,6 +56,7 @@ const messages = {
       json: 'Print valid JSON output',
       markdown: 'Print a Markdown report',
       init: 'Create missing starter AI-readiness files and folders',
+      minScore: 'Fail with exit code 1 when score is below this number',
       output: 'Write the report to a file',
       lang: 'Set human-readable output language: ko or en',
       help: 'Show this help text',
@@ -137,6 +141,9 @@ const messages = {
       targetPath: '대상 경로',
       totalScore: '총점',
       grade: '등급',
+      threshold: '점수 기준',
+      thresholdPassed: '점수 기준 통과: {score}/{maxScore}점이 최소 {minScore}점 이상입니다.',
+      thresholdFailed: '점수 기준 실패: {score}/{maxScore}점이 최소 {minScore}점보다 낮습니다.',
       categoryBreakdown: '카테고리별 점수',
       passedChecks: '통과한 검사',
       failedChecks: '실패한 검사',
@@ -169,6 +176,7 @@ const messages = {
       json: '올바른 JSON을 출력합니다',
       markdown: 'Markdown 리포트를 출력합니다',
       init: 'AI 작업 준비를 위한 기본 파일과 폴더를 생성합니다',
+      minScore: '점수가 이 값보다 낮으면 종료 코드 1로 실패합니다',
       output: '보고서를 파일로 저장합니다',
       lang: '사람이 읽는 출력 언어를 설정합니다: ko 또는 en',
       help: '이 도움말을 표시합니다',
@@ -263,6 +271,22 @@ function getOutputFormatConflictError(language) {
   return '출력 형식은 하나만 선택할 수 있습니다. --json 또는 --markdown 중 하나만 사용하세요.';
 }
 
+function getInvalidMinScoreError(value, language) {
+  if (normalizeLanguage(language) === 'en') {
+    return `--min-score requires a number from 0 to 100. Received: ${value}`;
+  }
+
+  return `--min-score에는 0부터 100까지의 숫자가 필요합니다. 입력값: ${value}`;
+}
+
+function getMinScoreInitConflictError(language) {
+  if (normalizeLanguage(language) === 'en') {
+    return '--min-score cannot be used with --init because init mode does not produce a score.';
+  }
+
+  return '--init 모드는 점수를 만들지 않으므로 --min-score와 함께 사용할 수 없습니다.';
+}
+
 function translateWarning(warning, language) {
   if (normalizeLanguage(language) === 'en') {
     return warning;
@@ -291,6 +315,8 @@ module.exports = {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
   getMessages,
+  getInvalidMinScoreError,
+  getMinScoreInitConflictError,
   getOutputFormatConflictError,
   getUnsupportedLanguageError,
   isSupportedLanguage,

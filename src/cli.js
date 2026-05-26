@@ -15,7 +15,9 @@ const {
 } = require('./reporter');
 const {
   DEFAULT_LANGUAGE,
+  getInvalidMinScoreError,
   getMessages,
+  getMinScoreInitConflictError,
   getOutputFormatConflictError,
   getUnsupportedLanguageError,
   isSupportedLanguage,
@@ -46,6 +48,7 @@ function getHelpText(language) {
     '',
     messages.options,
     `  --init              ${messages.init}`,
+    `  --min-score <0-100> ${messages.minScore}`,
     `  --json              ${messages.json}`,
     `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
@@ -58,6 +61,7 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js .',
     '  node bin/ai-ready-score.js --init',
     '  node bin/ai-ready-score.js ./some-project --init',
+    '  node bin/ai-ready-score.js . --min-score 80',
     '  node bin/ai-ready-score.js ./examples/good-project',
     '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
@@ -70,6 +74,7 @@ function parseArgs(args) {
   const options = {
     targetPath: '.',
     init: false,
+    minScore: null,
     json: false,
     markdown: false,
     output: null,
@@ -105,6 +110,37 @@ function parseArgs(args) {
 
     if (arg === '--markdown') {
       options.markdown = true;
+      continue;
+    }
+
+    if (arg === '--min-score') {
+      const minScore = args[index + 1];
+
+      if (!minScore || minScore.startsWith('--')) {
+        options.errors.push(getInvalidMinScoreError(minScore || '', options.lang));
+      } else {
+        const parsedMinScore = Number(minScore);
+
+        if (!Number.isFinite(parsedMinScore) || parsedMinScore < 0 || parsedMinScore > 100) {
+          options.errors.push(getInvalidMinScoreError(minScore, options.lang));
+        } else {
+          options.minScore = parsedMinScore;
+        }
+
+        index += 1;
+      }
+      continue;
+    }
+
+    if (arg.startsWith('--min-score=')) {
+      const minScore = arg.slice('--min-score='.length);
+      const parsedMinScore = Number(minScore);
+
+      if (!minScore || !Number.isFinite(parsedMinScore) || parsedMinScore < 0 || parsedMinScore > 100) {
+        options.errors.push(getInvalidMinScoreError(minScore, options.lang));
+      } else {
+        options.minScore = parsedMinScore;
+      }
       continue;
     }
 
@@ -166,7 +202,24 @@ function parseArgs(args) {
     options.errors.push(getOutputFormatConflictError(options.lang));
   }
 
+  if (options.init && options.minScore !== null) {
+    options.errors.push(getMinScoreInitConflictError(options.lang));
+  }
+
   return options;
+}
+
+function addThresholdResult(result, minScore) {
+  if (minScore === null) {
+    return result;
+  }
+
+  result.threshold = {
+    minScore,
+    passed: result.score >= minScore
+  };
+
+  return result;
 }
 
 function writeOutputFile(outputPath, content, cwd) {
@@ -228,7 +281,7 @@ function runCli(args, environment) {
     }
 
     const scan = scanProject(parsed.targetPath, { cwd });
-    const result = scoreProject(scan);
+    const result = addThresholdResult(scoreProject(scan), parsed.minScore);
     let report;
 
     if (parsed.json) {
@@ -244,10 +297,22 @@ function runCli(args, environment) {
     if (parsed.output) {
       const outputPath = writeOutputFile(parsed.output, report, cwd);
       stdout.write(`Report written to ${outputPath}\n`);
+      if (result.threshold && !result.threshold.passed) {
+        if (exit) {
+          exit(1);
+        }
+        return 1;
+      }
       return 0;
     }
 
     stdout.write(parsed.json ? `${report}\n` : report);
+    if (result.threshold && !result.threshold.passed) {
+      if (exit) {
+        exit(1);
+      }
+      return 1;
+    }
     return 0;
   } catch (error) {
     stderr.write(`ai-ready-score failed: ${error.message}\n`);
@@ -261,6 +326,7 @@ function runCli(args, environment) {
 module.exports = {
   runCli,
   parseArgs,
+  addThresholdResult,
   getHelpText,
   getPackageVersion
 };

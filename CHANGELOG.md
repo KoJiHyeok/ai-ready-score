@@ -8,19 +8,19 @@ All notable changes to this project will be documented in this file.
 
 ### English
 
-Planned v0.2.0 work.
+Planned v0.3.0 work.
 
-- Added `--init` to create missing starter AI-readiness files and folders without overwriting existing files.
-- Added text, JSON, and Markdown initialization reports.
-- Added initializer tests for creation, skipped existing files, Korean and English output, JSON output, Markdown output, and output file writing.
+- Added `--min-score` to fail CI-friendly commands when the project score is below a required threshold.
+- Added threshold messages for Korean, English, JSON, and Markdown output.
+- Added validation for invalid threshold values and for the unsupported `--init --min-score` combination.
 
 ### 한국어
 
-v0.2.0 예정 작업입니다.
+v0.3.0 예정 작업입니다.
 
-- 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성하는 `--init`을 추가했습니다.
-- 텍스트, JSON, Markdown 초기화 리포트를 추가했습니다.
-- 파일 생성, 기존 파일 건너뛰기, 한국어와 영어 출력, JSON 출력, Markdown 출력, 출력 파일 저장을 검증하는 초기화 테스트를 추가했습니다.
+- 프로젝트 점수가 필요한 기준보다 낮을 때 CI 친화적인 명령을 실패시키는 `--min-score`를 추가했습니다.
+- 한국어, 영어, JSON, Markdown 출력에 점수 기준 메시지를 추가했습니다.
+- 잘못된 점수 기준 값과 지원하지 않는 `--init --min-score` 조합 검증을 추가했습니다.
 
 ## v0.1.0
 

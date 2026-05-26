@@ -42,6 +42,15 @@ function escapeMarkdownTableCell(value) {
   return String(value).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 }
 
+function formatThresholdMessage(threshold, result, messages) {
+  const template = threshold.passed ? messages.report.thresholdPassed : messages.report.thresholdFailed;
+
+  return template
+    .replace('{score}', String(result.score))
+    .replace('{maxScore}', String(result.maxScore))
+    .replace('{minScore}', String(threshold.minScore));
+}
+
 function formatSkippedItem(item, messages) {
   if (item.reason === 'already exists') {
     return `${item.path} ${messages.init.alreadyExists}`;
@@ -141,6 +150,11 @@ function formatTextReport(result, options) {
   lines.push(`${report.targetPath}: ${result.targetPath}`);
   lines.push(`${report.totalScore}: ${result.score}/${result.maxScore}`);
   lines.push(`${report.grade}: ${result.grade}`);
+
+  if (result.threshold) {
+    lines.push(`${report.threshold}: ${formatThresholdMessage(result.threshold, result, messages)}`);
+  }
+
   lines.push('');
   lines.push(`${report.categoryBreakdown}:`);
 
@@ -206,6 +220,11 @@ function formatMarkdownReport(result, options) {
   lines.push(`- **${markdown.target}:** ${result.targetPath}`);
   lines.push(`- **${markdown.score}:** ${result.score}/${result.maxScore}`);
   lines.push(`- **${markdown.grade}:** ${result.grade}`);
+
+  if (result.threshold) {
+    lines.push(`- **${messages.report.threshold}:** ${formatThresholdMessage(result.threshold, result, messages)}`);
+  }
+
   lines.push('');
   lines.push(`## ${markdown.categoryBreakdown}`);
   lines.push('');

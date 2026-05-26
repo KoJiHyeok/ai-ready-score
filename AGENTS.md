@@ -44,6 +44,7 @@ node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js --json
@@ -69,6 +70,7 @@ The package is published on npm, so public usage examples may include:
 ```sh
 npx ai-ready-score .
 npx ai-ready-score . --lang en
+npx ai-ready-score . --min-score 80
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
 npm install -g ai-ready-score
@@ -155,6 +157,15 @@ Grades:
 - When changing starter templates, update tests that verify generated files and user-facing init output.
 - Keep `--init --json` parseable and keep `--init --markdown` stable enough for saved reports.
 
+## Threshold Behavior
+
+- `--min-score <0-100>` should analyze the project normally and then compare the score against the threshold.
+- If the score is greater than or equal to the threshold, exit with code 0.
+- If the score is lower than the threshold, print the report and exit with code 1.
+- `--min-score` must work with Korean, English, JSON, and Markdown output.
+- `--min-score` must not be combinable with `--init`.
+- Future agents must preserve these CI-friendly exit codes when changing CLI flow.
+
 ## Do Not Do
 
 - Do not add external npm dependencies.
@@ -165,6 +176,7 @@ Grades:
 - Do not combine scanner, scorer, reporter, and CLI logic into one file.
 - Do not change scoring rules without updating tests.
 - Do not make `--init` overwrite user files.
+- Do not break `--min-score` exit codes.
 - Do not rely on shell-specific path separators.
 
 ## npm Publishing Checklist
@@ -208,6 +220,7 @@ node bin/ai-ready-score.js
 node bin/ai-ready-score.js .
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
+node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --json
 node bin/ai-ready-score.js . --markdown
 node bin/ai-ready-score.js . --markdown --lang ko

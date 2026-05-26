@@ -32,6 +32,7 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Supports GitHub-friendly Markdown report output with `--markdown`.
 - Can write JSON or Markdown reports to disk with `--output`.
 - Can initialize missing AI-readiness starter files and folders with `--init`.
+- Can fail CI when the score is below a required threshold with `--min-score`.
 - Warns about obvious sensitive files in the project root.
 - Uses only Node.js built-in modules.
 - Runs on Node.js 18 or newer.
@@ -46,6 +47,7 @@ Run without installing:
 npx ai-ready-score .
 npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
+npx ai-ready-score . --min-score 80
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -91,6 +93,7 @@ node bin/ai-ready-score.js --init
 node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -105,6 +108,7 @@ node bin/ai-ready-score.js --version
 Options:
 
 - `--init`: create missing starter AI-readiness files and folders without overwriting existing files.
+- `--min-score <0-100>`: exit with code 1 when the project score is below the required minimum.
 - `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--json`: print valid JSON for automation.
 - `--markdown`: print a Markdown report.
@@ -166,6 +170,18 @@ node bin/ai-ready-score.js ./my-project --init
 - `examples/README.md` when `examples/` is newly created
 
 Existing files and folders are never overwritten. If an item already exists, the command reports it as skipped. `--init --json` returns a machine-readable initialization result, and `--init --markdown` prints a Markdown initialization report.
+
+## CI score thresholds
+
+Use `--min-score` to make the command fail when a project is below your required AI-readiness score:
+
+```sh
+npx ai-ready-score . --min-score 80
+node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --min-score 80 --json
+```
+
+If the score is greater than or equal to the threshold, the command exits with code `0`. If the score is below the threshold, the command still prints the report but exits with code `1`. `--min-score` cannot be combined with `--init`.
 
 ## Scoring rubric
 
@@ -385,6 +401,7 @@ AI 코딩 에이전트는 문서가 명확하고, 구조가 예측 가능하며,
 - `--markdown`으로 GitHub에 붙여 넣기 좋은 Markdown 리포트를 출력합니다.
 - `--output`으로 JSON 또는 Markdown 리포트를 파일로 저장할 수 있습니다.
 - `--init`으로 AI 작업 친화성을 높이는 기본 파일과 폴더를 생성할 수 있습니다.
+- `--min-score`로 점수가 기준보다 낮을 때 CI를 실패시킬 수 있습니다.
 - 프로젝트 루트의 명백한 민감 파일을 경고합니다.
 - Node.js 기본 모듈만 사용합니다.
 - Node.js 18 이상에서 실행됩니다.
@@ -399,6 +416,7 @@ AI 코딩 에이전트는 문서가 명확하고, 구조가 예측 가능하며,
 npx ai-ready-score .
 npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
+npx ai-ready-score . --min-score 80
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -444,6 +462,7 @@ node bin/ai-ready-score.js --init
 node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
+node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -458,6 +477,7 @@ node bin/ai-ready-score.js --version
 옵션:
 
 - `--init`: 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성합니다.
+- `--min-score <0-100>`: 프로젝트 점수가 필요한 최소 점수보다 낮으면 종료 코드 1로 실패합니다.
 - `--lang <ko|en>`: 사람이 읽는 출력 언어를 설정합니다. 기본값은 `ko`입니다.
 - `--json`: 자동화에 사용할 수 있는 올바른 JSON을 출력합니다.
 - `--markdown`: Markdown 리포트를 출력합니다.
@@ -519,6 +539,18 @@ node bin/ai-ready-score.js ./my-project --init
 - `examples/`를 새로 만들 때 `examples/README.md`
 
 기존 파일과 폴더는 절대 덮어쓰지 않습니다. 이미 있는 항목은 건너뛴 항목으로 보고합니다. `--init --json`은 자동화에 사용할 수 있는 초기화 결과를 반환하고, `--init --markdown`은 Markdown 초기화 리포트를 출력합니다.
+
+## CI 점수 기준
+
+`--min-score`를 사용하면 프로젝트가 필요한 AI 준비도 점수에 미달할 때 명령을 실패시킬 수 있습니다.
+
+```sh
+npx ai-ready-score . --min-score 80
+node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --min-score 80 --json
+```
+
+점수가 기준 이상이면 명령은 종료 코드 `0`으로 성공합니다. 점수가 기준보다 낮으면 리포트는 그대로 출력하지만 종료 코드 `1`로 실패합니다. `--min-score`는 `--init`과 함께 사용할 수 없습니다.
 
 ## 점수 기준
 
