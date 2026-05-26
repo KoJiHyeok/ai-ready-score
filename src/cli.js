@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { applyConfigResult, loadConfig } = require('./config');
 const { initializeProject } = require('./initializer');
 const { scanProject } = require('./scanner');
 const { scoreProject } = require('./scorer');
@@ -15,6 +16,7 @@ const {
 } = require('./reporter');
 const {
   DEFAULT_LANGUAGE,
+  getConfigInitConflictError,
   getInvalidMinScoreError,
   getMessages,
   getMinScoreInitConflictError,
@@ -49,6 +51,7 @@ function getHelpText(language) {
     messages.options,
     `  --init              ${messages.init}`,
     `  --min-score <0-100> ${messages.minScore}`,
+    `  --config <file>     ${messages.config || 'JSON 설정 파일에서 프로젝트별 검사를 읽습니다'}`,
     `  --json              ${messages.json}`,
     `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
@@ -62,6 +65,7 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js --init',
     '  node bin/ai-ready-score.js ./some-project --init',
     '  node bin/ai-ready-score.js . --min-score 80',
+    '  node bin/ai-ready-score.js . --config ai-ready-score.config.json',
     '  node bin/ai-ready-score.js ./examples/good-project',
     '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
@@ -75,6 +79,7 @@ function parseArgs(args) {
     targetPath: '.',
     init: false,
     minScore: null,
+    config: null,
     json: false,
     markdown: false,
     output: null,
@@ -144,6 +149,29 @@ function parseArgs(args) {
       continue;
     }
 
+    if (arg === '--config') {
+      const configPath = args[index + 1];
+
+      if (!configPath || configPath.startsWith('--')) {
+        options.errors.push('--config requires a file path.');
+      } else {
+        options.config = configPath;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (arg.startsWith('--config=')) {
+      const configPath = arg.slice('--config='.length);
+
+      if (!configPath) {
+        options.errors.push('--config requires a file path.');
+      } else {
+        options.config = configPath;
+      }
+      continue;
+    }
+
     if (arg === '--lang') {
       const language = args[index + 1];
 
@@ -206,6 +234,10 @@ function parseArgs(args) {
     options.errors.push(getMinScoreInitConflictError(options.lang));
   }
 
+  if (options.init && options.config !== null) {
+    options.errors.push(getConfigInitConflictError(options.lang));
+  }
+
   return options;
 }
 
@@ -220,6 +252,18 @@ function addThresholdResult(result, minScore) {
   };
 
   return result;
+}
+
+function shouldFail(result) {
+  if (result.threshold && !result.threshold.passed) {
+    return true;
+  }
+
+  if (result.config && result.config.failOnMissingConfigRequirements && !result.config.passed) {
+    return true;
+  }
+
+  return false;
 }
 
 function writeOutputFile(outputPath, content, cwd) {
@@ -280,8 +324,11 @@ function runCli(args, environment) {
       return 0;
     }
 
+    const config = parsed.config ? loadConfig(parsed.config, { cwd }) : null;
     const scan = scanProject(parsed.targetPath, { cwd });
-    const result = addThresholdResult(scoreProject(scan), parsed.minScore);
+    const configuredResult = applyConfigResult(scoreProject(scan), scan, config);
+    const effectiveMinScore = parsed.minScore !== null ? parsed.minScore : config && config.minScore;
+    const result = addThresholdResult(configuredResult, effectiveMinScore === null ? null : effectiveMinScore);
     let report;
 
     if (parsed.json) {
@@ -297,7 +344,7 @@ function runCli(args, environment) {
     if (parsed.output) {
       const outputPath = writeOutputFile(parsed.output, report, cwd);
       stdout.write(`Report written to ${outputPath}\n`);
-      if (result.threshold && !result.threshold.passed) {
+      if (shouldFail(result)) {
         if (exit) {
           exit(1);
         }
@@ -307,7 +354,7 @@ function runCli(args, environment) {
     }
 
     stdout.write(parsed.json ? `${report}\n` : report);
-    if (result.threshold && !result.threshold.passed) {
+    if (shouldFail(result)) {
       if (exit) {
         exit(1);
       }
@@ -327,6 +374,7 @@ module.exports = {
   runCli,
   parseArgs,
   addThresholdResult,
+  shouldFail,
   getHelpText,
   getPackageVersion
 };

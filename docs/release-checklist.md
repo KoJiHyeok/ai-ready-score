@@ -4,6 +4,44 @@ Use this checklist before publishing a public release.
 
 공개 릴리스를 배포하기 전에 이 체크리스트를 사용하세요.
 
+## v0.5.0
+
+### English
+
+1. Confirm `package.json` version is `0.5.0`.
+2. Confirm `--config` is documented in README.md and AGENTS.md.
+3. Confirm `CHANGELOG.md` has a bilingual `v0.5.0` entry.
+4. Confirm `docs/release-notes/v0.5.0.md` is ready for the GitHub Release body.
+5. Run `npm test`.
+6. Run `npm run check`.
+7. Run focused `--config` smoke tests for JSON, Markdown, Korean, English, and failure exit codes.
+8. Run `npm pack --dry-run` and inspect the packed file list.
+9. Commit the release preparation changes.
+10. Create the tag with `git tag v0.5.0`.
+11. Push the branch with `git push origin main`.
+12. Push the tag with `git push origin v0.5.0`.
+13. Run `npm publish --access public` only because this task explicitly requests release and publish.
+14. Verify the published package with `npx ai-ready-score@latest --version`.
+15. Create the GitHub Release from `docs/release-notes/v0.5.0.md`.
+
+### 한국어
+
+1. `package.json` 버전이 `0.5.0`인지 확인합니다.
+2. README.md와 AGENTS.md에 `--config`가 문서화되어 있는지 확인합니다.
+3. `CHANGELOG.md`에 bilingual `v0.5.0` 항목이 있는지 확인합니다.
+4. `docs/release-notes/v0.5.0.md`가 GitHub Release 본문으로 사용할 준비가 되었는지 확인합니다.
+5. `npm test`를 실행합니다.
+6. `npm run check`를 실행합니다.
+7. JSON, Markdown, 한국어, 영어, 실패 종료 코드에 대한 `--config` 집중 smoke test를 실행합니다.
+8. `npm pack --dry-run`을 실행하고 패키지에 포함될 파일 목록을 확인합니다.
+9. 릴리스 준비 변경 사항을 커밋합니다.
+10. `git tag v0.5.0`으로 태그를 생성합니다.
+11. `git push origin main`으로 브랜치를 push합니다.
+12. `git push origin v0.5.0`으로 태그를 push합니다.
+13. 이 작업이 명시적으로 release 및 publish를 요청했으므로 `npm publish --access public`을 실행합니다.
+14. `npx ai-ready-score@latest --version`으로 배포된 패키지를 검증합니다.
+15. `docs/release-notes/v0.5.0.md`를 사용해 GitHub Release를 생성합니다.
+
 ## v0.4.1
 
 ### English

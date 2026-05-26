@@ -54,6 +54,21 @@ test('scanner reports invalid package.json without throwing', () => {
   }
 });
 
+test('scanner parses package.json with a UTF-8 BOM', () => {
+  const projectPath = makeTempProject();
+
+  try {
+    writeFileSync(path.join(projectPath, 'package.json'), '\uFEFF{"scripts":{"test":"node --test"}}', 'utf8');
+    const scan = scanProject(projectPath);
+
+    assert.equal(scan.packageJson.exists, true);
+    assert.equal(scan.packageJson.error, null);
+    assert.equal(scan.packageJson.data.scripts.test, 'node --test');
+  } finally {
+    removeTempProject(projectPath);
+  }
+});
+
 test('scanner detects configured sensitive root file names', () => {
   assert.equal(isSensitiveFileName('.env'), true);
   assert.equal(isSensitiveFileName('.env.local'), true);

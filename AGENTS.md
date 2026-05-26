@@ -31,6 +31,7 @@ Keep responsibilities separate:
 - `src/scorer.js`: calculates scores, grades, checks, and recommendations.
 - `src/reporter.js`: formats text, JSON, and Markdown output.
 - `src/i18n.js`: stores Korean and English user-facing messages.
+- `src/config.js`: loads and applies `--config` project-specific checks.
 - `src/initializer.js`: handles `--init` file/folder creation.
 - `src/templates.js`: stores `--init` starter templates.
 - `src/cli.js`: parses options and coordinates scan, score, init, reporting, output, and exit codes.
@@ -46,6 +47,7 @@ Preserve these public behaviors unless the user explicitly asks to change them:
 - `--output <file>` writes JSON or Markdown reports to disk.
 - `--init` creates starter files/folders only when missing.
 - `--min-score <0-100>` exits `1` when the score is below the threshold.
+- `--config <file>` adds project-specific checks from a JSON config file.
 - `--help` and `--version` must keep working.
 
 ## How to Run
@@ -57,6 +59,7 @@ node bin/ai-ready-score.js . --json
 node bin/ai-ready-score.js . --markdown
 node bin/ai-ready-score.js --init
 node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
 ```
 
 ## Non-Negotiable Rules
@@ -70,6 +73,7 @@ node bin/ai-ready-score.js . --min-score 80
 - Preserve JSON and Markdown output stability.
 - Preserve `--init` no-overwrite behavior.
 - Preserve `--min-score` exit codes.
+- Preserve `--config` behavior: default scoring stays stable, configured checks are reported separately, and CLI `--min-score` overrides config `minScore`.
 - Update tests when behavior changes.
 - Update README.md, CHANGELOG.md, AGENTS.md, and release notes when user-facing behavior changes.
 - Keep English and Korean documentation consistent for user-facing behavior. 짧은 한국어 메모는 유용할 때만 유지합니다.
@@ -110,6 +114,7 @@ Do not change scoring rules without updating tests, README.md, AGENTS.md, and ex
 - CLI option changes usually touch `src/cli.js`, `src/reporter.js`, `src/i18n.js`, and `tests/cli.test.js`.
 - Scoring changes usually touch `src/rules.js`, `src/scorer.js`, tests, README.md, and examples.
 - `--init` template changes usually touch `src/templates.js`, initializer tests, README.md, and AGENTS.md.
+- `--config` changes usually touch `src/config.js`, `src/cli.js`, `src/reporter.js`, `src/i18n.js`, tests, README.md, and AGENTS.md.
 - Release work usually touches `package.json`, CHANGELOG.md, release checklist, and release notes.
 
 ## Common Validation Commands
@@ -125,6 +130,7 @@ node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
 node bin/ai-ready-score.js . --markdown
 node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
 node bin/ai-ready-score.js --help
 node bin/ai-ready-score.js --version
 ```
@@ -195,6 +201,7 @@ Do not commit generated or local-only artifacts:
 - Do not publish without explicit user approval.
 - Do not tag unless this is a release task.
 - Do not overwrite user files with `--init`.
+- Do not make `--config` silently change the built-in 100-point rubric for users who do not opt in.
 - Do not add external npm dependencies.
 - Do not add AI API calls.
 - Do not add network requests.

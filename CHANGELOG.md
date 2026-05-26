@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 모든 주요 변경 사항은 이 파일에 기록합니다.
 
+## v0.5.0
+
+### English
+
+Configurable project checks release.
+
+- Added `--config <file>` for JSON project-specific checks.
+- Added support for configured required files, required directories, required package scripts, forbidden files, and default `minScore`.
+- Added `failOnMissingConfigRequirements` so CI can fail when configured checks fail.
+- Kept the built-in 100-point scoring rubric stable; configured checks are reported separately.
+- Added JSON, text, and Markdown reporting for configured checks.
+
+### 한국어
+
+프로젝트별 설정 검사 릴리스입니다.
+
+- JSON 프로젝트별 검사를 위한 `--config <file>` 옵션을 추가했습니다.
+- 설정 파일에서 필수 파일, 필수 폴더, 필수 package.json 스크립트, 금지 파일, 기본 `minScore`를 지정할 수 있습니다.
+- 설정 검사가 실패할 때 CI를 실패시킬 수 있도록 `failOnMissingConfigRequirements`를 추가했습니다.
+- 기본 100점 점수 기준은 안정적으로 유지하고, 설정 검사는 별도로 보고합니다.
+- 설정 검사에 대한 JSON, 텍스트, Markdown 출력을 추가했습니다.
+
 ## v0.4.1
 
 ### English

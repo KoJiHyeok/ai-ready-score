@@ -25,6 +25,7 @@ test('--help works', () => {
   assert.match(result.stdout, /사용법:/);
   assert.match(result.stdout, /--init/);
   assert.match(result.stdout, /--min-score <0-100>/);
+  assert.match(result.stdout, /--config <file>/);
   assert.match(result.stdout, /--json/);
   assert.match(result.stdout, /--markdown/);
   assert.match(result.stdout, /--lang <ko\|en>/);
@@ -131,6 +132,175 @@ test('--min-score cannot be combined with --init', () => {
 
   assert.equal(result.status, 1);
   assert.match(result.stderr, /--min-score cannot be used with --init/);
+});
+
+test('--config adds project-specific checks to JSON output', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-json-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(path.join(tempPath, 'README.md'), '# Config fixture\n\nUsage\nInstallation\nProject structure\n', 'utf8');
+    writeFileSync(path.join(tempPath, 'package.json'), '{"scripts":{"test":"node --test","lint":"node --check index.js"}}', 'utf8');
+    writeFileSync(path.join(tempPath, 'SECURITY.md'), '# Security\n', 'utf8');
+    mkdirSync(path.join(tempPath, 'docs'));
+    writeFileSync(configPath, JSON.stringify({
+      requiredFiles: ['SECURITY.md'],
+      requiredDirectories: ['docs'],
+      requiredPackageScripts: ['lint'],
+      forbiddenFiles: ['.env']
+    }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.equal(parsed.config.path, configPath);
+    assert.equal(parsed.config.passed, true);
+    assert.equal(parsed.config.checks.length, 4);
+    assert.ok(parsed.config.checks.some((check) => check.type === 'requiredFile' && check.path === 'SECURITY.md' && check.passed));
+    assert.ok(parsed.config.checks.some((check) => check.type === 'requiredPackageScript' && check.path === 'lint' && check.passed));
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config can fail when configured requirements are missing', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-fail-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, JSON.stringify({
+      failOnMissingConfigRequirements: true,
+      requiredFiles: ['SECURITY.md']
+    }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /Config status: Failed configured checks/);
+    assert.match(result.stdout, /\[fail\] Required file exists: SECURITY\.md/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config is included in Markdown output', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-markdown-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, JSON.stringify({
+      requiredFiles: ['SECURITY.md']
+    }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--markdown', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /## Configured checks/);
+    assert.match(result.stdout, /fail: Required file exists: SECURITY\.md/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config with --lang ko prints Korean config text', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-ko-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, JSON.stringify({
+      requiredFiles: ['SECURITY.md']
+    }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--lang', 'ko'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /설정 검사 상태/);
+    assert.match(result.stdout, /필수 파일이 있습니다: SECURITY\.md/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config minScore applies when --min-score is not provided', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-min-score-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, JSON.stringify({ minScore: 80 }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 1);
+    assert.deepEqual(parsed.threshold, {
+      minScore: 80,
+      passed: false
+    });
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--min-score overrides config minScore', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-min-score-override-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, JSON.stringify({ minScore: 100 }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--min-score', '0', '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(parsed.threshold, {
+      minScore: 0,
+      passed: true
+    });
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('invalid --config JSON fails with a friendly error', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-invalid-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, '{ nope', 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /ai-ready-score failed: Config file must contain valid JSON/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config accepts UTF-8 BOM JSON files', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-config-bom-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(configPath, `\uFEFF${JSON.stringify({ requiredFiles: ['README.md'] })}`, 'utf8');
+    writeFileSync(path.join(tempPath, 'README.md'), '# BOM fixture\n', 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.equal(parsed.config.passed, true);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--config cannot be combined with --init', () => {
+  const result = runCli(['--init', '--config', 'ai-ready-score.config.json', '--lang', 'en']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--config cannot be used with --init/);
 });
 
 test('--init creates missing starter files in the current directory', () => {

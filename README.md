@@ -33,6 +33,7 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Can write JSON or Markdown reports to disk with `--output`.
 - Can initialize missing AI-readiness starter files and folders with `--init`.
 - Can fail CI when the score is below a required threshold with `--min-score`.
+- Can add project-specific checks from a JSON config file with `--config`.
 - Warns about obvious sensitive files in the project root.
 - Uses only Node.js built-in modules.
 - Runs on Node.js 18 or newer.
@@ -48,6 +49,7 @@ npx ai-ready-score .
 npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
 npx ai-ready-score . --min-score 80
+npx ai-ready-score . --config ai-ready-score.config.json
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -94,6 +96,7 @@ node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -109,6 +112,7 @@ Options:
 
 - `--init`: create missing starter AI-readiness files and folders without overwriting existing files.
 - `--min-score <0-100>`: exit with code 1 when the project score is below the required minimum.
+- `--config <file>`: read project-specific checks and optional default threshold from a JSON config file.
 - `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--json`: print valid JSON for automation.
 - `--markdown`: print a Markdown report.
@@ -182,6 +186,42 @@ node bin/ai-ready-score.js . --min-score 80 --json
 ```
 
 If the score is greater than or equal to the threshold, the command exits with code `0`. If the score is below the threshold, the command still prints the report but exits with code `1`. `--min-score` cannot be combined with `--init`.
+
+## Configuration
+
+Use `--config` when a project needs additional local requirements beyond the built-in 100-point rubric:
+
+```sh
+npx ai-ready-score . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --config ai-ready-score.config.json --json
+```
+
+Example `ai-ready-score.config.json`:
+
+```json
+{
+  "minScore": 80,
+  "failOnMissingConfigRequirements": true,
+  "requiredFiles": ["SECURITY.md"],
+  "requiredDirectories": ["docs"],
+  "requiredPackageScripts": ["lint"],
+  "forbiddenFiles": [".env"]
+}
+```
+
+Config paths are resolved from the current working directory. Required and forbidden file paths are relative to the target project and cannot point outside it.
+
+Supported fields:
+
+- `minScore`: optional default score threshold from 0 to 100. A CLI `--min-score` value overrides this.
+- `failOnMissingConfigRequirements`: when `true`, the command exits with code `1` if any configured check fails.
+- `requiredFiles`: files that should exist in the target project.
+- `requiredDirectories`: directories that should exist in the target project.
+- `requiredPackageScripts`: scripts that should exist in `package.json`.
+- `forbiddenFiles`: files that should not exist in the target project.
+
+Configured checks are reported separately from the built-in score. This keeps the default scoring rubric stable while still allowing CI to enforce project-specific requirements.
 
 ## Scoring rubric
 
@@ -356,7 +396,7 @@ GitHub Actions runs CI on push and pull request with Node.js 18, Node.js 20, and
 ## Roadmap
 
 - Add more repository health checks.
-- Add optional configuration for custom rubrics.
+- Expand configuration options for larger teams.
 - Add CI usage examples.
 - Add richer documentation checks.
 
@@ -402,6 +442,7 @@ AI 코딩 에이전트는 문서가 명확하고, 구조가 예측 가능하며,
 - `--output`으로 JSON 또는 Markdown 리포트를 파일로 저장할 수 있습니다.
 - `--init`으로 AI 작업 친화성을 높이는 기본 파일과 폴더를 생성할 수 있습니다.
 - `--min-score`로 점수가 기준보다 낮을 때 CI를 실패시킬 수 있습니다.
+- `--config`로 JSON 설정 파일의 프로젝트별 검사를 추가할 수 있습니다.
 - 프로젝트 루트의 명백한 민감 파일을 경고합니다.
 - Node.js 기본 모듈만 사용합니다.
 - Node.js 18 이상에서 실행됩니다.
@@ -417,6 +458,7 @@ npx ai-ready-score .
 npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
 npx ai-ready-score . --min-score 80
+npx ai-ready-score . --config ai-ready-score.config.json
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -463,6 +505,7 @@ node bin/ai-ready-score.js ./my-project --init
 node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --min-score 80
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -478,6 +521,7 @@ node bin/ai-ready-score.js --version
 
 - `--init`: 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성합니다.
 - `--min-score <0-100>`: 프로젝트 점수가 필요한 최소 점수보다 낮으면 종료 코드 1로 실패합니다.
+- `--config <file>`: JSON 설정 파일에서 프로젝트별 검사와 선택적 기본 점수 기준을 읽습니다.
 - `--lang <ko|en>`: 사람이 읽는 출력 언어를 설정합니다. 기본값은 `ko`입니다.
 - `--json`: 자동화에 사용할 수 있는 올바른 JSON을 출력합니다.
 - `--markdown`: Markdown 리포트를 출력합니다.
@@ -551,6 +595,42 @@ node bin/ai-ready-score.js . --min-score 80 --json
 ```
 
 점수가 기준 이상이면 명령은 종료 코드 `0`으로 성공합니다. 점수가 기준보다 낮으면 리포트는 그대로 출력하지만 종료 코드 `1`로 실패합니다. `--min-score`는 `--init`과 함께 사용할 수 없습니다.
+
+## 설정 파일
+
+기본 100점 점수 기준 외에 프로젝트별 요구사항이 필요하면 `--config`를 사용합니다.
+
+```sh
+npx ai-ready-score . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --config ai-ready-score.config.json --json
+```
+
+예시 `ai-ready-score.config.json`:
+
+```json
+{
+  "minScore": 80,
+  "failOnMissingConfigRequirements": true,
+  "requiredFiles": ["SECURITY.md"],
+  "requiredDirectories": ["docs"],
+  "requiredPackageScripts": ["lint"],
+  "forbiddenFiles": [".env"]
+}
+```
+
+설정 파일 경로는 현재 작업 디렉터리 기준으로 해석됩니다. 필수/금지 파일 경로는 검사 대상 프로젝트 기준의 상대 경로이며 프로젝트 밖을 가리킬 수 없습니다.
+
+지원 필드:
+
+- `minScore`: 0부터 100까지의 선택적 기본 점수 기준입니다. CLI의 `--min-score`가 있으면 그 값이 우선합니다.
+- `failOnMissingConfigRequirements`: `true`이면 설정 검사가 하나라도 실패할 때 종료 코드 `1`로 실패합니다.
+- `requiredFiles`: 검사 대상 프로젝트에 있어야 하는 파일입니다.
+- `requiredDirectories`: 검사 대상 프로젝트에 있어야 하는 폴더입니다.
+- `requiredPackageScripts`: `package.json`에 있어야 하는 스크립트입니다.
+- `forbiddenFiles`: 검사 대상 프로젝트에 없어야 하는 파일입니다.
+
+설정 검사는 기본 점수와 별도로 보고됩니다. 따라서 기본 점수 기준은 안정적으로 유지하면서 CI에서 프로젝트별 요구사항을 강제할 수 있습니다.
 
 ## 점수 기준
 

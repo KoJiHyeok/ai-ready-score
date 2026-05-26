@@ -51,6 +51,63 @@ function formatThresholdMessage(threshold, result, messages) {
     .replace('{minScore}', String(threshold.minScore));
 }
 
+function getConfigReportMessages(report) {
+  const isEnglish = report.pass === 'pass';
+  const defaults = isEnglish
+    ? {
+        configStatus: 'Config status',
+        configPassed: 'Passed configured checks',
+        configFailed: 'Failed configured checks',
+        configuredChecks: 'Configured checks',
+        configFile: 'Config file',
+        configFailureMode: 'Config failure mode',
+        configFailureEnabled: 'fail command when configured checks fail',
+        configFailureDisabled: 'report only',
+        configRequiredFile: 'Required file exists: {path}',
+        configRequiredDirectory: 'Required directory exists: {path}',
+        configRequiredPackageScript: 'Required package script exists: {path}',
+        configForbiddenFile: 'Forbidden file is absent: {path}'
+      }
+    : {
+        configStatus: '설정 검사 상태',
+        configPassed: '설정 검사를 통과했습니다',
+        configFailed: '설정 검사에 실패했습니다',
+        configuredChecks: '설정 검사',
+        configFile: '설정 파일',
+        configFailureMode: '설정 실패 처리',
+        configFailureEnabled: '설정 검사 실패 시 명령 실패',
+        configFailureDisabled: '보고만 함',
+        configRequiredFile: '필수 파일이 있습니다: {path}',
+        configRequiredDirectory: '필수 폴더가 있습니다: {path}',
+        configRequiredPackageScript: '필수 package.json 스크립트가 있습니다: {path}',
+        configForbiddenFile: '금지된 파일이 없습니다: {path}'
+      };
+
+  return Object.assign({}, defaults, report);
+}
+
+function formatConfigCheckLabel(check, messages) {
+  const report = getConfigReportMessages(messages.report);
+
+  if (check.type === 'requiredFile') {
+    return report.configRequiredFile.replace('{path}', check.path);
+  }
+
+  if (check.type === 'requiredDirectory') {
+    return report.configRequiredDirectory.replace('{path}', check.path);
+  }
+
+  if (check.type === 'requiredPackageScript') {
+    return report.configRequiredPackageScript.replace('{path}', check.path);
+  }
+
+  if (check.type === 'forbiddenFile') {
+    return report.configForbiddenFile.replace('{path}', check.path);
+  }
+
+  return check.path;
+}
+
 function formatSkippedItem(item, messages) {
   if (item.reason === 'already exists') {
     return `${item.path} ${messages.init.alreadyExists}`;
@@ -140,7 +197,7 @@ function formatInitMarkdownReport(result, options) {
 function formatTextReport(result, options) {
   const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
   const messages = getMessages(language);
-  const report = messages.report;
+  const report = getConfigReportMessages(messages.report);
   const lines = [];
   const passedChecks = result.checks.filter((check) => check.passed);
   const failedChecks = result.checks.filter((check) => !check.passed);
@@ -153,6 +210,10 @@ function formatTextReport(result, options) {
 
   if (result.threshold) {
     lines.push(`${report.threshold}: ${formatThresholdMessage(result.threshold, result, messages)}`);
+  }
+
+  if (result.config) {
+    lines.push(`${report.configStatus}: ${result.config.passed ? report.configPassed : report.configFailed}`);
   }
 
   lines.push('');
@@ -194,6 +255,20 @@ function formatTextReport(result, options) {
   }
 
   lines.push('');
+  if (result.config) {
+    lines.push(`${report.configuredChecks}:`);
+    lines.push(`- ${report.configFile}: ${result.config.path}`);
+    lines.push(`- ${report.configFailureMode}: ${result.config.failOnMissingConfigRequirements ? report.configFailureEnabled : report.configFailureDisabled}`);
+    if (result.config.checks.length === 0) {
+      lines.push(`- ${report.none}`);
+    } else {
+      result.config.checks.forEach((check) => {
+        lines.push(`- [${check.passed ? report.pass : report.fail}] ${formatConfigCheckLabel(check, messages)}`);
+      });
+    }
+    lines.push('');
+  }
+
   lines.push(`${report.recommendations}:`);
   if (failedChecks.length === 0) {
     lines.push(`- ${report.noRecommendations}`);
@@ -210,7 +285,7 @@ function formatMarkdownReport(result, options) {
   const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
   const messages = getMessages(language);
   const markdown = messages.markdown;
-  const report = messages.report;
+  const report = getConfigReportMessages(messages.report);
   const lines = [];
   const passedChecks = result.checks.filter((check) => check.passed);
   const failedChecks = result.checks.filter((check) => !check.passed);
@@ -223,6 +298,10 @@ function formatMarkdownReport(result, options) {
 
   if (result.threshold) {
     lines.push(`- **${messages.report.threshold}:** ${formatThresholdMessage(result.threshold, result, messages)}`);
+  }
+
+  if (result.config) {
+    lines.push(`- **${report.configStatus}:** ${result.config.passed ? report.configPassed : report.configFailed}`);
   }
 
   lines.push('');
@@ -270,6 +349,21 @@ function formatMarkdownReport(result, options) {
   }
 
   lines.push('');
+  if (result.config) {
+    lines.push(`## ${report.configuredChecks}`);
+    lines.push('');
+    lines.push(`- **${report.configFile}:** ${result.config.path}`);
+    lines.push(`- **${report.configFailureMode}:** ${result.config.failOnMissingConfigRequirements ? report.configFailureEnabled : report.configFailureDisabled}`);
+    if (result.config.checks.length === 0) {
+      lines.push(`- ${report.none}`);
+    } else {
+      result.config.checks.forEach((check) => {
+        lines.push(`- ${check.passed ? report.pass : report.fail}: ${formatConfigCheckLabel(check, messages)}`);
+      });
+    }
+    lines.push('');
+  }
+
   lines.push(`## ${markdown.recommendations}`);
   lines.push('');
   if (failedChecks.length === 0) {

@@ -55,7 +55,7 @@ function readJsonFile(filePath) {
   try {
     return {
       exists: true,
-      data: JSON.parse(raw),
+      data: JSON.parse(raw.replace(/^\uFEFF/, '')),
       error: null
     };
   } catch (error) {

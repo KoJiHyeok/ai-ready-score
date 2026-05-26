@@ -13,6 +13,18 @@ const messages = {
       threshold: 'Score threshold',
       thresholdPassed: 'Passed score threshold: {score}/{maxScore} is at least {minScore}.',
       thresholdFailed: 'Failed score threshold: {score}/{maxScore} is below {minScore}.',
+      configStatus: 'Config status',
+      configPassed: 'Passed configured checks',
+      configFailed: 'Failed configured checks',
+      configuredChecks: 'Configured checks',
+      configFile: 'Config file',
+      configFailureMode: 'Config failure mode',
+      configFailureEnabled: 'fail command when configured checks fail',
+      configFailureDisabled: 'report only',
+      configRequiredFile: 'Required file exists: {path}',
+      configRequiredDirectory: 'Required directory exists: {path}',
+      configRequiredPackageScript: 'Required package script exists: {path}',
+      configForbiddenFile: 'Forbidden file is absent: {path}',
       categoryBreakdown: 'Category breakdown',
       passedChecks: 'Passed checks',
       failedChecks: 'Failed checks',
@@ -57,6 +69,7 @@ const messages = {
       markdown: 'Print a Markdown report',
       init: 'Create missing starter AI-readiness files and folders',
       minScore: 'Fail with exit code 1 when score is below this number',
+      config: 'Read project-specific checks from a JSON config file',
       output: 'Write the report to a file',
       lang: 'Set human-readable output language: ko or en',
       help: 'Show this help text',
@@ -287,6 +300,14 @@ function getMinScoreInitConflictError(language) {
   return '--init 모드는 점수를 만들지 않으므로 --min-score와 함께 사용할 수 없습니다.';
 }
 
+function getConfigInitConflictError(language) {
+  if (normalizeLanguage(language) === 'en') {
+    return '--config cannot be used with --init because init mode does not produce a normal score report.';
+  }
+
+  return '--init 모드는 일반 점수 리포트를 만들지 않으므로 --config와 함께 사용할 수 없습니다.';
+}
+
 function translateWarning(warning, language) {
   if (normalizeLanguage(language) === 'en') {
     return warning;
@@ -315,6 +336,7 @@ module.exports = {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
   getMessages,
+  getConfigInitConflictError,
   getInvalidMinScoreError,
   getMinScoreInitConflictError,
   getOutputFormatConflictError,

@@ -1,6 +1,7 @@
 'use strict';
 
 const { runCli } = require('./cli');
+const { applyConfigResult, loadConfig, normalizeConfig } = require('./config');
 const { initializeProject } = require('./initializer');
 const { scanProject } = require('./scanner');
 const { scoreProject, getGrade } = require('./scorer');
@@ -17,6 +18,9 @@ const { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } = require('./i18n');
 
 module.exports = {
   runCli,
+  applyConfigResult,
+  loadConfig,
+  normalizeConfig,
   initializeProject,
   scanProject,
   scoreProject,
