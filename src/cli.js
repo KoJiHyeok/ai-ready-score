@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { applyConfigResult, loadConfig } = require('./config');
+const { applyConfigResult, loadConfig, mergeIgnorePatterns, normalizeIgnorePattern } = require('./config');
 const { initializeProject } = require('./initializer');
 const { scanProject } = require('./scanner');
 const { scoreProject } = require('./scorer');
@@ -52,6 +52,7 @@ function getHelpText(language) {
     `  --init              ${messages.init}`,
     `  --min-score <0-100> ${messages.minScore}`,
     `  --config <file>     ${messages.config || 'JSON 설정 파일에서 프로젝트별 검사를 읽습니다'}`,
+    `  --ignore <pattern>   ${messages.ignore || '루트 항목을 검사에서 제외합니다'}`,
     `  --json              ${messages.json}`,
     `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
@@ -66,6 +67,7 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js ./some-project --init',
     '  node bin/ai-ready-score.js . --min-score 80',
     '  node bin/ai-ready-score.js . --config ai-ready-score.config.json',
+    '  node bin/ai-ready-score.js . --ignore node_modules --ignore dist',
     '  node bin/ai-ready-score.js ./examples/good-project',
     '  node bin/ai-ready-score.js . --lang en',
     '  node bin/ai-ready-score.js --json',
@@ -80,6 +82,7 @@ function parseArgs(args) {
     init: false,
     minScore: null,
     config: null,
+    ignore: [],
     json: false,
     markdown: false,
     output: null,
@@ -168,6 +171,37 @@ function parseArgs(args) {
         options.errors.push('--config requires a file path.');
       } else {
         options.config = configPath;
+      }
+      continue;
+    }
+
+    if (arg === '--ignore') {
+      const ignorePattern = args[index + 1];
+
+      if (!ignorePattern || ignorePattern.startsWith('--')) {
+        options.errors.push('--ignore requires a root-level name or pattern.');
+      } else {
+        try {
+          options.ignore.push(normalizeIgnorePattern(ignorePattern, '--ignore'));
+        } catch (error) {
+          options.errors.push(error.message);
+        }
+        index += 1;
+      }
+      continue;
+    }
+
+    if (arg.startsWith('--ignore=')) {
+      const ignorePattern = arg.slice('--ignore='.length);
+
+      if (!ignorePattern) {
+        options.errors.push('--ignore requires a root-level name or pattern.');
+      } else {
+        try {
+          options.ignore.push(normalizeIgnorePattern(ignorePattern, '--ignore'));
+        } catch (error) {
+          options.errors.push(error.message);
+        }
       }
       continue;
     }
@@ -325,7 +359,8 @@ function runCli(args, environment) {
     }
 
     const config = parsed.config ? loadConfig(parsed.config, { cwd }) : null;
-    const scan = scanProject(parsed.targetPath, { cwd });
+    const ignorePatterns = mergeIgnorePatterns(config, parsed.ignore);
+    const scan = scanProject(parsed.targetPath, { cwd, ignorePatterns });
     const configuredResult = applyConfigResult(scoreProject(scan), scan, config);
     const effectiveMinScore = parsed.minScore !== null ? parsed.minScore : config && config.minScore;
     const result = addThresholdResult(configuredResult, effectiveMinScore === null ? null : effectiveMinScore);

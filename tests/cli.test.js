@@ -26,6 +26,7 @@ test('--help works', () => {
   assert.match(result.stdout, /--init/);
   assert.match(result.stdout, /--min-score <0-100>/);
   assert.match(result.stdout, /--config <file>/);
+  assert.match(result.stdout, /--ignore <pattern>/);
   assert.match(result.stdout, /--json/);
   assert.match(result.stdout, /--markdown/);
   assert.match(result.stdout, /--lang <ko\|en>/);
@@ -301,6 +302,138 @@ test('--config cannot be combined with --init', () => {
 
   assert.equal(result.status, 1);
   assert.match(result.stderr, /--config cannot be used with --init/);
+});
+
+test('--ignore can be provided repeatedly', () => {
+  const parsed = parseArgs(['.', '--ignore', 'node_modules', '--ignore=dist', '--json']);
+
+  assert.equal(parsed.targetPath, '.');
+  assert.equal(parsed.json, true);
+  assert.deepEqual(parsed.ignore, ['node_modules', 'dist']);
+  assert.equal(parsed.errors.length, 0);
+});
+
+test('invalid --ignore path fails with a friendly error', () => {
+  const result = runCli(['.', '--ignore', 'dist/output', '--lang', 'en']);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /must be root-level names or patterns/);
+});
+
+test('--ignore excludes matching root items from JSON scoring input', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-json-'));
+
+  try {
+    writeFileSync(path.join(tempPath, '.env'), 'SECRET=example\n', 'utf8');
+
+    const result = runCli(['.', '--ignore', '.env', '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(parsed.ignorePatterns, ['.env']);
+    assert.deepEqual(parsed.ignored, [
+      { path: '.env', type: 'file', pattern: '.env' }
+    ]);
+    assert.equal(parsed.warnings.some((warning) => warning.includes('.env')), false);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--ignore supports repeated root-level patterns', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-repeat-'));
+
+  try {
+    mkdirSync(path.join(tempPath, 'dist'));
+    mkdirSync(path.join(tempPath, 'node_modules'));
+
+    const result = runCli(['.', '--ignore', 'node_modules', '--ignore', 'dist', '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+    const ignoredPaths = parsed.ignored.map((item) => item.path).sort();
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(parsed.ignorePatterns, ['node_modules', 'dist']);
+    assert.deepEqual(ignoredPaths, ['dist', 'node_modules']);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--ignore supports root-level wildcard patterns', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-wildcard-'));
+
+  try {
+    writeFileSync(path.join(tempPath, 'private.key'), 'SECRET=example\n', 'utf8');
+
+    const result = runCli(['.', '--ignore', '*.key', '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(parsed.ignorePatterns, ['*.key']);
+    assert.deepEqual(parsed.ignored, [
+      { path: 'private.key', type: 'file', pattern: '*.key' }
+    ]);
+    assert.equal(parsed.warnings.some((warning) => warning.includes('private.key')), false);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('config ignore array excludes matching root items', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-config-'));
+  const configPath = path.join(tempPath, 'ai-ready-score.config.json');
+
+  try {
+    writeFileSync(path.join(tempPath, '.env'), 'SECRET=example\n', 'utf8');
+    writeFileSync(configPath, JSON.stringify({ ignore: ['.env'] }), 'utf8');
+
+    const result = runCli(['.', '--config', configPath, '--json'], { cwd: tempPath });
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(parsed.config.ignore, ['.env']);
+    assert.deepEqual(parsed.ignorePatterns, ['.env']);
+    assert.deepEqual(parsed.ignored, [
+      { path: '.env', type: 'file', pattern: '.env' }
+    ]);
+    assert.equal(parsed.warnings.some((warning) => warning.includes('.env')), false);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--ignore is shown in English text output', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-text-'));
+
+  try {
+    writeFileSync(path.join(tempPath, '.env'), 'SECRET=example\n', 'utf8');
+
+    const result = runCli(['.', '--ignore', '.env', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /Ignored root items:/);
+    assert.match(result.stdout, /Ignore patterns: \.env/);
+    assert.match(result.stdout, /\.env \(file, matched \.env\)/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
+});
+
+test('--ignore is shown in English Markdown output', () => {
+  const tempPath = mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-ignore-markdown-'));
+
+  try {
+    writeFileSync(path.join(tempPath, '.env'), 'SECRET=example\n', 'utf8');
+
+    const result = runCli(['.', '--ignore', '.env', '--markdown', '--lang', 'en'], { cwd: tempPath });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /## Ignored root items/);
+    assert.match(result.stdout, /\*\*Ignore patterns:\*\* \.env/);
+    assert.match(result.stdout, /\.env \(file, matched \.env\)/);
+  } finally {
+    rmSync(tempPath, { recursive: true, force: true });
+  }
 });
 
 test('--init creates missing starter files in the current directory', () => {

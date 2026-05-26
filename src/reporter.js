@@ -83,7 +83,21 @@ function getConfigReportMessages(report) {
         configForbiddenFile: '금지된 파일이 없습니다: {path}'
       };
 
-  return Object.assign({}, defaults, report);
+  const merged = Object.assign({}, defaults, report);
+
+  if (!merged.ignoredItems) {
+    merged.ignoredItems = isEnglish ? 'Ignored root items' : '무시된 루트 항목';
+  }
+
+  if (!merged.ignorePatterns) {
+    merged.ignorePatterns = isEnglish ? 'Ignore patterns' : '무시 패턴';
+  }
+
+  if (!merged.ignoredItem) {
+    merged.ignoredItem = isEnglish ? '{path} ({type}, matched {pattern})' : '{path} ({type}, {pattern}와 일치)';
+  }
+
+  return merged;
 }
 
 function formatConfigCheckLabel(check, messages) {
@@ -106,6 +120,15 @@ function formatConfigCheckLabel(check, messages) {
   }
 
   return check.path;
+}
+
+function formatIgnoredItem(item, messages) {
+  const report = getConfigReportMessages(messages.report);
+
+  return report.ignoredItem
+    .replace('{path}', item.path)
+    .replace('{type}', item.type)
+    .replace('{pattern}', item.pattern);
 }
 
 function formatSkippedItem(item, messages) {
@@ -269,6 +292,19 @@ function formatTextReport(result, options) {
     lines.push('');
   }
 
+  if (result.ignorePatterns && result.ignorePatterns.length > 0) {
+    lines.push(`${report.ignoredItems}:`);
+    lines.push(`- ${report.ignorePatterns}: ${result.ignorePatterns.join(', ')}`);
+    if (!result.ignored || result.ignored.length === 0) {
+      lines.push(`- ${report.none}`);
+    } else {
+      result.ignored.forEach((item) => {
+        lines.push(`- ${formatIgnoredItem(item, messages)}`);
+      });
+    }
+    lines.push('');
+  }
+
   lines.push(`${report.recommendations}:`);
   if (failedChecks.length === 0) {
     lines.push(`- ${report.noRecommendations}`);
@@ -359,6 +395,20 @@ function formatMarkdownReport(result, options) {
     } else {
       result.config.checks.forEach((check) => {
         lines.push(`- ${check.passed ? report.pass : report.fail}: ${formatConfigCheckLabel(check, messages)}`);
+      });
+    }
+    lines.push('');
+  }
+
+  if (result.ignorePatterns && result.ignorePatterns.length > 0) {
+    lines.push(`## ${report.ignoredItems}`);
+    lines.push('');
+    lines.push(`- **${report.ignorePatterns}:** ${result.ignorePatterns.join(', ')}`);
+    if (!result.ignored || result.ignored.length === 0) {
+      lines.push(`- ${report.none}`);
+    } else {
+      result.ignored.forEach((item) => {
+        lines.push(`- ${formatIgnoredItem(item, messages)}`);
       });
     }
     lines.push('');

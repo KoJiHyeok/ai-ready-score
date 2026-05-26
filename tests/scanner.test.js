@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { scanProject, isSensitiveFileName } = require('../src/scanner');
+const { scanProject, isSensitiveFileName, matchesRootIgnorePattern } = require('../src/scanner');
 
 function makeTempProject() {
   return mkdtempSync(path.join(os.tmpdir(), 'ai-ready-score-'));
@@ -78,4 +78,38 @@ test('scanner detects configured sensitive root file names', () => {
   assert.equal(isSensitiveFileName('server.pem'), true);
   assert.equal(isSensitiveFileName('private.key'), true);
   assert.equal(isSensitiveFileName('README.md'), false);
+});
+
+test('scanner ignores matching root-level files and folders', () => {
+  const projectPath = makeTempProject();
+
+  try {
+    mkdirSync(path.join(projectPath, 'docs'));
+    writeFileSync(path.join(projectPath, 'README.md'), '# Ignored\n', 'utf8');
+    writeFileSync(path.join(projectPath, 'package.json'), '{"scripts":{"test":"node --test"}}', 'utf8');
+
+    const scan = scanProject(projectPath, {
+      ignorePatterns: ['README.md', 'docs', 'package.json']
+    });
+
+    assert.equal(scan.rootFileContents['README.md'], '');
+    assert.equal(scan.packageJson.exists, false);
+    assert.equal(scan.files.includes('README.md'), false);
+    assert.equal(scan.files.includes('package.json'), false);
+    assert.equal(scan.directories.includes('docs'), false);
+    assert.deepEqual(scan.ignored.sort((left, right) => left.path.localeCompare(right.path)), [
+      { path: 'docs', type: 'directory', pattern: 'docs' },
+      { path: 'package.json', type: 'file', pattern: 'package.json' },
+      { path: 'README.md', type: 'file', pattern: 'README.md' }
+    ]);
+  } finally {
+    removeTempProject(projectPath);
+  }
+});
+
+test('scanner supports root-level wildcard ignore patterns', () => {
+  assert.equal(matchesRootIgnorePattern('debug.log', '*.log'), true);
+  assert.equal(matchesRootIgnorePattern('debug.txt', '*.log'), false);
+  assert.equal(matchesRootIgnorePattern('dist', 'dist'), true);
+  assert.equal(matchesRootIgnorePattern('src/dist', 'dist'), false);
 });

@@ -1,7 +1,14 @@
 'use strict';
 
 const { runCli } = require('./cli');
-const { applyConfigResult, loadConfig, normalizeConfig } = require('./config');
+const {
+  applyConfigResult,
+  loadConfig,
+  mergeIgnorePatterns,
+  normalizeConfig,
+  normalizeIgnorePattern,
+  normalizeIgnorePatterns
+} = require('./config');
 const { initializeProject } = require('./initializer');
 const { scanProject } = require('./scanner');
 const { scoreProject, getGrade } = require('./scorer');
@@ -20,7 +27,10 @@ module.exports = {
   runCli,
   applyConfigResult,
   loadConfig,
+  mergeIgnorePatterns,
   normalizeConfig,
+  normalizeIgnorePattern,
+  normalizeIgnorePatterns,
   initializeProject,
   scanProject,
   scoreProject,

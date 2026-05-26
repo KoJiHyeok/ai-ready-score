@@ -4,6 +4,20 @@ const fs = require('fs');
 const path = require('path');
 const { isDirectory, isFile, pathExists } = require('./utils');
 
+function uniqueStrings(values) {
+  const seen = new Set();
+  const unique = [];
+
+  values.forEach((value) => {
+    if (!seen.has(value)) {
+      seen.add(value);
+      unique.push(value);
+    }
+  });
+
+  return unique;
+}
+
 function normalizeRelativePath(value, fieldName) {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(`${fieldName} must contain non-empty strings.`);
@@ -22,6 +36,28 @@ function normalizeRelativePath(value, fieldName) {
   }
 
   return parts.join('/');
+}
+
+function normalizeIgnorePattern(value, fieldName) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`${fieldName} must contain non-empty strings.`);
+  }
+
+  const trimmed = value.trim();
+
+  if (path.isAbsolute(trimmed) || trimmed.includes('/') || trimmed.includes('\\') || trimmed === '..' || trimmed.includes('..')) {
+    throw new Error(`${fieldName} entries must be root-level names or patterns: ${trimmed}`);
+  }
+
+  return trimmed;
+}
+
+function normalizeIgnorePatterns(values, fieldName) {
+  if (!Array.isArray(values)) {
+    throw new Error(`${fieldName} must be an array.`);
+  }
+
+  return values.map((value) => normalizeIgnorePattern(value, fieldName));
 }
 
 function normalizeStringArray(config, fieldName, normalizer) {
@@ -77,7 +113,8 @@ function normalizeConfig(rawConfig, configPath) {
     requiredFiles: normalizeStringArray(rawConfig, 'requiredFiles', normalizeRelativePath),
     requiredDirectories: normalizeStringArray(rawConfig, 'requiredDirectories', normalizeRelativePath),
     requiredPackageScripts: normalizeStringArray(rawConfig, 'requiredPackageScripts', normalizeScriptName),
-    forbiddenFiles: normalizeStringArray(rawConfig, 'forbiddenFiles', normalizeRelativePath)
+    forbiddenFiles: normalizeStringArray(rawConfig, 'forbiddenFiles', normalizeRelativePath),
+    ignore: normalizeStringArray(rawConfig, 'ignore', normalizeIgnorePattern)
   };
 }
 
@@ -98,6 +135,11 @@ function loadConfig(inputPath, options) {
   }
 
   return normalizeConfig(rawConfig, configPath);
+}
+
+function mergeIgnorePatterns(config, cliIgnorePatterns) {
+  const configIgnore = config && Array.isArray(config.ignore) ? config.ignore : [];
+  return uniqueStrings(configIgnore.concat(cliIgnorePatterns || []));
 }
 
 function projectPath(targetPath, relativePath) {
@@ -140,6 +182,7 @@ function applyConfigResult(result, scan, config) {
     path: config.path,
     minScore: config.minScore,
     failOnMissingConfigRequirements: config.failOnMissingConfigRequirements,
+    ignore: config.ignore.slice(),
     passed: checks.every((check) => check.passed),
     checks
   };
@@ -150,5 +193,8 @@ function applyConfigResult(result, scan, config) {
 module.exports = {
   applyConfigResult,
   loadConfig,
-  normalizeConfig
+  mergeIgnorePatterns,
+  normalizeConfig,
+  normalizeIgnorePattern,
+  normalizeIgnorePatterns
 };

@@ -34,6 +34,7 @@ AI coding agents work best when a repository has clear documentation, predictabl
 - Can initialize missing AI-readiness starter files and folders with `--init`.
 - Can fail CI when the score is below a required threshold with `--min-score`.
 - Can add project-specific checks from a JSON config file with `--config`.
+- Can ignore root-level files and folders during scanning with repeated `--ignore` patterns.
 - Warns about obvious sensitive files in the project root.
 - Uses only Node.js built-in modules.
 - Runs on Node.js 18 or newer.
@@ -50,6 +51,7 @@ npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
 npx ai-ready-score . --min-score 80
 npx ai-ready-score . --config ai-ready-score.config.json
+npx ai-ready-score . --ignore node_modules --ignore dist
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -97,6 +99,7 @@ node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --ignore node_modules --ignore dist
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -113,6 +116,7 @@ Options:
 - `--init`: create missing starter AI-readiness files and folders without overwriting existing files.
 - `--min-score <0-100>`: exit with code 1 when the project score is below the required minimum.
 - `--config <file>`: read project-specific checks and optional default threshold from a JSON config file.
+- `--ignore <pattern>`: ignore matching root-level files or folders while scanning. Can be repeated.
 - `--lang <ko|en>`: set the human-readable output language. The default is `ko`.
 - `--json`: print valid JSON for automation.
 - `--markdown`: print a Markdown report.
@@ -187,6 +191,20 @@ node bin/ai-ready-score.js . --min-score 80 --json
 
 If the score is greater than or equal to the threshold, the command exits with code `0`. If the score is below the threshold, the command still prints the report but exits with code `1`. `--min-score` cannot be combined with `--init`.
 
+## Ignoring root items
+
+Use `--ignore` when generated folders, vendored files, or local-only artifacts should not affect the scan:
+
+```sh
+npx ai-ready-score . --ignore node_modules --ignore dist
+node bin/ai-ready-score.js . --ignore .env --json
+node bin/ai-ready-score.js . --ignore "*.log" --markdown
+```
+
+In v0.6.0, ignore matching is intentionally root-level only. A pattern can be an exact root entry name such as `dist` or `.env`, or a simple `*` wildcard pattern such as `*.log`. Nested paths are rejected so ignored entries stay explicit and cross-platform.
+
+Ignored entries are removed from the scanner input before scoring and warnings are calculated. The base scoring rubric is unchanged. Text, JSON, and Markdown reports include the applied ignore patterns and the root entries they matched.
+
 ## Configuration
 
 Use `--config` when a project needs additional local requirements beyond the built-in 100-point rubric:
@@ -206,7 +224,8 @@ Example `ai-ready-score.config.json`:
   "requiredFiles": ["SECURITY.md"],
   "requiredDirectories": ["docs"],
   "requiredPackageScripts": ["lint"],
-  "forbiddenFiles": [".env"]
+  "forbiddenFiles": [".env"],
+  "ignore": ["node_modules", "dist", "*.log"]
 }
 ```
 
@@ -220,6 +239,7 @@ Supported fields:
 - `requiredDirectories`: directories that should exist in the target project.
 - `requiredPackageScripts`: scripts that should exist in `package.json`.
 - `forbiddenFiles`: files that should not exist in the target project.
+- `ignore`: root-level file or folder names, or simple `*` wildcard patterns, to ignore before scoring.
 
 Configured checks are reported separately from the built-in score. This keeps the default scoring rubric stable while still allowing CI to enforce project-specific requirements.
 
@@ -443,6 +463,7 @@ AI 코딩 에이전트는 문서가 명확하고, 구조가 예측 가능하며,
 - `--init`으로 AI 작업 친화성을 높이는 기본 파일과 폴더를 생성할 수 있습니다.
 - `--min-score`로 점수가 기준보다 낮을 때 CI를 실패시킬 수 있습니다.
 - `--config`로 JSON 설정 파일의 프로젝트별 검사를 추가할 수 있습니다.
+- 반복 가능한 `--ignore` 패턴으로 루트 파일과 폴더를 검사에서 제외할 수 있습니다.
 - 프로젝트 루트의 명백한 민감 파일을 경고합니다.
 - Node.js 기본 모듈만 사용합니다.
 - Node.js 18 이상에서 실행됩니다.
@@ -459,6 +480,7 @@ npx ai-ready-score --init
 npx ai-ready-score ./my-project --init
 npx ai-ready-score . --min-score 80
 npx ai-ready-score . --config ai-ready-score.config.json
+npx ai-ready-score . --ignore node_modules --ignore dist
 npx ai-ready-score . --lang en
 npx ai-ready-score . --json
 npx ai-ready-score . --markdown
@@ -506,6 +528,7 @@ node bin/ai-ready-score.js ./examples/good-project
 node bin/ai-ready-score.js ./examples/poor-project
 node bin/ai-ready-score.js . --min-score 80
 node bin/ai-ready-score.js . --config ai-ready-score.config.json
+node bin/ai-ready-score.js . --ignore node_modules --ignore dist
 node bin/ai-ready-score.js . --lang ko
 node bin/ai-ready-score.js . --lang en
 node bin/ai-ready-score.js . --json
@@ -522,6 +545,7 @@ node bin/ai-ready-score.js --version
 - `--init`: 기존 파일을 덮어쓰지 않고 AI 작업 준비에 필요한 기본 파일과 폴더를 생성합니다.
 - `--min-score <0-100>`: 프로젝트 점수가 필요한 최소 점수보다 낮으면 종료 코드 1로 실패합니다.
 - `--config <file>`: JSON 설정 파일에서 프로젝트별 검사와 선택적 기본 점수 기준을 읽습니다.
+- `--ignore <pattern>`: 검사 중 일치하는 루트 파일이나 폴더를 제외합니다. 여러 번 사용할 수 있습니다.
 - `--lang <ko|en>`: 사람이 읽는 출력 언어를 설정합니다. 기본값은 `ko`입니다.
 - `--json`: 자동화에 사용할 수 있는 올바른 JSON을 출력합니다.
 - `--markdown`: Markdown 리포트를 출력합니다.
@@ -596,6 +620,20 @@ node bin/ai-ready-score.js . --min-score 80 --json
 
 점수가 기준 이상이면 명령은 종료 코드 `0`으로 성공합니다. 점수가 기준보다 낮으면 리포트는 그대로 출력하지만 종료 코드 `1`로 실패합니다. `--min-score`는 `--init`과 함께 사용할 수 없습니다.
 
+## 루트 항목 무시
+
+생성된 폴더, vendored 파일, 로컬 전용 산출물이 검사에 영향을 주지 않아야 할 때 `--ignore`를 사용합니다.
+
+```sh
+npx ai-ready-score . --ignore node_modules --ignore dist
+node bin/ai-ready-score.js . --ignore .env --json
+node bin/ai-ready-score.js . --ignore "*.log" --markdown
+```
+
+v0.6.0의 ignore 매칭은 의도적으로 루트 항목만 지원합니다. 패턴은 `dist`나 `.env` 같은 정확한 루트 항목 이름이거나 `*.log` 같은 단순 `*` 와일드카드일 수 있습니다. 중첩 경로는 거부되므로 무시되는 항목이 명확하고 크로스 플랫폼으로 유지됩니다.
+
+무시된 항목은 점수와 경고를 계산하기 전에 scanner 입력에서 제외됩니다. 기본 점수 기준은 변경되지 않습니다. Text, JSON, Markdown 리포트에는 적용된 ignore 패턴과 일치한 루트 항목이 포함됩니다.
+
 ## 설정 파일
 
 기본 100점 점수 기준 외에 프로젝트별 요구사항이 필요하면 `--config`를 사용합니다.
@@ -615,7 +653,8 @@ node bin/ai-ready-score.js . --config ai-ready-score.config.json --json
   "requiredFiles": ["SECURITY.md"],
   "requiredDirectories": ["docs"],
   "requiredPackageScripts": ["lint"],
-  "forbiddenFiles": [".env"]
+  "forbiddenFiles": [".env"],
+  "ignore": ["node_modules", "dist", "*.log"]
 }
 ```
 
@@ -629,6 +668,7 @@ node bin/ai-ready-score.js . --config ai-ready-score.config.json --json
 - `requiredDirectories`: 검사 대상 프로젝트에 있어야 하는 폴더입니다.
 - `requiredPackageScripts`: `package.json`에 있어야 하는 스크립트입니다.
 - `forbiddenFiles`: 검사 대상 프로젝트에 없어야 하는 파일입니다.
+- `ignore`: 점수 계산 전에 제외할 루트 파일/폴더 이름 또는 단순 `*` 와일드카드 패턴입니다.
 
 설정 검사는 기본 점수와 별도로 보고됩니다. 따라서 기본 점수 기준은 안정적으로 유지하면서 CI에서 프로젝트별 요구사항을 강제할 수 있습니다.
 

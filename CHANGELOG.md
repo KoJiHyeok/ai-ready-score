@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 모든 주요 변경 사항은 이 파일에 기록합니다.
 
+## v0.6.0
+
+### English
+
+Root-level ignore support release.
+
+- Added repeatable `--ignore <pattern>` CLI support.
+- Added config `ignore` array support and merged config/CLI ignore patterns without duplicates.
+- Kept the built-in scoring rubric unchanged while filtering ignored root entries before scoring and warnings.
+- Added text, JSON, and Markdown reporting for applied ignore patterns and matched root items.
+- Added validation so ignore patterns stay root-level and cross-platform.
+
+### 한국어
+
+루트 항목 무시 기능 릴리스입니다.
+
+- 반복 가능한 `--ignore <pattern>` CLI 옵션을 추가했습니다.
+- 설정 파일의 `ignore` 배열을 지원하고 config/CLI ignore 패턴을 중복 없이 병합합니다.
+- 기본 점수 기준은 유지하면서 점수와 경고 계산 전에 무시된 루트 항목을 제외합니다.
+- 적용된 ignore 패턴과 일치한 루트 항목을 text, JSON, Markdown 리포트에 표시합니다.
+- ignore 패턴이 루트 항목 기준과 크로스 플랫폼 동작을 유지하도록 검증을 추가했습니다.
+
 ## v0.5.0
 
 ### English

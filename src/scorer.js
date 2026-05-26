@@ -78,6 +78,8 @@ function scoreProject(scan) {
     categories: categoryResults,
     checks: checkResults,
     recommendations,
+    ignored: scan.ignored ? scan.ignored.slice() : [],
+    ignorePatterns: scan.ignorePatterns ? scan.ignorePatterns.slice() : [],
     warnings: scan.warnings.slice()
   };
 }
