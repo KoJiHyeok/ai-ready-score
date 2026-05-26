@@ -4,11 +4,31 @@ All notable changes to this project will be documented in this file.
 
 모든 주요 변경 사항은 이 파일에 기록합니다.
 
-## Unreleased
+## v0.4.0
 
 ### English
 
-Planned v0.3.0 work.
+Release workflow documentation update.
+
+- Added a required completion workflow to `AGENTS.md` so future Codex work runs validation, cleans artifacts, commits, and pushes after normal development tasks.
+- Added a release-only workflow that separates ordinary code changes from tag creation and npm publishing.
+- Documented that `npm publish` must run only when the user explicitly requests a release or publish task.
+- Reinforced preservation requirements for Korean/English output, JSON output, Markdown output, `--init`, and `--min-score`.
+
+### 한국어
+
+릴리스 워크플로우 문서를 업데이트했습니다.
+
+- 향후 Codex 작업이 일반 개발 작업 후 검증, 산출물 정리, 커밋, push까지 수행하도록 `AGENTS.md`에 필수 완료 워크플로우를 추가했습니다.
+- 일반 코드 변경과 태그 생성 및 npm 배포를 분리하는 릴리스 전용 워크플로우를 추가했습니다.
+- 사용자가 명시적으로 release 또는 publish 작업을 요청한 경우에만 `npm publish`를 실행해야 한다고 문서화했습니다.
+- 한국어/영어 출력, JSON 출력, Markdown 출력, `--init`, `--min-score` 보존 요구사항을 강화했습니다.
+
+## v0.3.0
+
+### English
+
+CI score threshold release.
 
 - Added `--min-score` to fail CI-friendly commands when the project score is below a required threshold.
 - Added threshold messages for Korean, English, JSON, and Markdown output.
@@ -16,7 +36,7 @@ Planned v0.3.0 work.
 
 ### 한국어
 
-v0.3.0 예정 작업입니다.
+CI 점수 기준 릴리스입니다.
 
 - 프로젝트 점수가 필요한 기준보다 낮을 때 CI 친화적인 명령을 실패시키는 `--min-score`를 추가했습니다.
 - 한국어, 영어, JSON, Markdown 출력에 점수 기준 메시지를 추가했습니다.
