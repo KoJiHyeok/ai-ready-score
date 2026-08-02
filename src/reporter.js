@@ -51,57 +51,8 @@ function formatThresholdMessage(threshold, result, messages) {
     .replace('{minScore}', String(threshold.minScore));
 }
 
-function getConfigReportMessages(report) {
-  const isEnglish = report.pass === 'pass';
-  const defaults = isEnglish
-    ? {
-        configStatus: 'Config status',
-        configPassed: 'Passed configured checks',
-        configFailed: 'Failed configured checks',
-        configuredChecks: 'Configured checks',
-        configFile: 'Config file',
-        configFailureMode: 'Config failure mode',
-        configFailureEnabled: 'fail command when configured checks fail',
-        configFailureDisabled: 'report only',
-        configRequiredFile: 'Required file exists: {path}',
-        configRequiredDirectory: 'Required directory exists: {path}',
-        configRequiredPackageScript: 'Required package script exists: {path}',
-        configForbiddenFile: 'Forbidden file is absent: {path}'
-      }
-    : {
-        configStatus: '설정 검사 상태',
-        configPassed: '설정 검사를 통과했습니다',
-        configFailed: '설정 검사에 실패했습니다',
-        configuredChecks: '설정 검사',
-        configFile: '설정 파일',
-        configFailureMode: '설정 실패 처리',
-        configFailureEnabled: '설정 검사 실패 시 명령 실패',
-        configFailureDisabled: '보고만 함',
-        configRequiredFile: '필수 파일이 있습니다: {path}',
-        configRequiredDirectory: '필수 폴더가 있습니다: {path}',
-        configRequiredPackageScript: '필수 package.json 스크립트가 있습니다: {path}',
-        configForbiddenFile: '금지된 파일이 없습니다: {path}'
-      };
-
-  const merged = Object.assign({}, defaults, report);
-
-  if (!merged.ignoredItems) {
-    merged.ignoredItems = isEnglish ? 'Ignored root items' : '무시된 루트 항목';
-  }
-
-  if (!merged.ignorePatterns) {
-    merged.ignorePatterns = isEnglish ? 'Ignore patterns' : '무시 패턴';
-  }
-
-  if (!merged.ignoredItem) {
-    merged.ignoredItem = isEnglish ? '{path} ({type}, matched {pattern})' : '{path} ({type}, {pattern}와 일치)';
-  }
-
-  return merged;
-}
-
 function formatConfigCheckLabel(check, messages) {
-  const report = getConfigReportMessages(messages.report);
+  const report = messages.report;
 
   if (check.type === 'requiredFile') {
     return report.configRequiredFile.replace('{path}', check.path);
@@ -123,9 +74,7 @@ function formatConfigCheckLabel(check, messages) {
 }
 
 function formatIgnoredItem(item, messages) {
-  const report = getConfigReportMessages(messages.report);
-
-  return report.ignoredItem
+  return messages.report.ignoredItem
     .replace('{path}', item.path)
     .replace('{type}', item.type)
     .replace('{pattern}', item.pattern);
@@ -139,10 +88,82 @@ function formatSkippedItem(item, messages) {
   return item.path;
 }
 
-function formatInitTextReport(result, options) {
+function resolveReportContext(options) {
   const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
-  const messages = getMessages(language);
+  return { language, messages: getMessages(language) };
+}
+
+function appendListSection(lines, heading, items, emptyLine, renderItem) {
+  lines.push(...heading);
+  if (items.length === 0) {
+    lines.push(emptyLine);
+  } else {
+    items.forEach((item) => {
+      lines.push(renderItem(item));
+    });
+  }
+}
+
+function appendWarningsSection(lines, heading, warnings, language, emptyLine) {
+  lines.push(...heading);
+  if (warnings.length === 0) {
+    lines.push(emptyLine);
+  } else {
+    warnings.forEach((warning) => {
+      lines.push(`- ${translateWarning(warning, language)}`);
+    });
+  }
+}
+
+function appendConfigSection(lines, config, messages, emptyLine, style) {
+  const report = messages.report;
+
+  lines.push(...style.configHeading(report.configuredChecks));
+  lines.push(style.keyValueLine(report.configFile, config.path));
+  lines.push(style.keyValueLine(
+    report.configFailureMode,
+    config.failOnMissingConfigRequirements ? report.configFailureEnabled : report.configFailureDisabled
+  ));
+  if (config.checks.length === 0) {
+    lines.push(emptyLine);
+  } else {
+    config.checks.forEach((check) => {
+      lines.push(style.configCheckLine(check, formatConfigCheckLabel(check, messages)));
+    });
+  }
+  lines.push('');
+}
+
+function appendIgnoredSection(lines, result, messages, emptyLine, style) {
+  const report = messages.report;
+
+  lines.push(...style.ignoredHeading(report.ignoredItems));
+  lines.push(style.keyValueLine(report.ignorePatterns, result.ignorePatterns.join(', ')));
+  if (!result.ignored || result.ignored.length === 0) {
+    lines.push(emptyLine);
+  } else {
+    result.ignored.forEach((item) => {
+      lines.push(`- ${formatIgnoredItem(item, messages)}`);
+    });
+  }
+  lines.push('');
+}
+
+function appendRecommendationsSection(lines, heading, failedChecks, messages, emptyLine) {
+  lines.push(...heading);
+  if (failedChecks.length === 0) {
+    lines.push(emptyLine);
+  } else {
+    getUniqueRecommendations(failedChecks, messages).forEach((recommendation) => {
+      lines.push(`- ${recommendation}`);
+    });
+  }
+}
+
+function formatInitTextReport(result, options) {
+  const { messages } = resolveReportContext(options);
   const init = messages.init;
+  const emptyLine = `- ${init.none}`;
   const lines = [];
 
   lines.push(init.completed);
@@ -155,32 +176,19 @@ function formatInitTextReport(result, options) {
     lines.push('');
   }
 
-  lines.push(`${init.createdItems}:`);
-  if (result.created.length === 0) {
-    lines.push(`- ${init.none}`);
-  } else {
-    result.created.forEach((item) => {
-      lines.push(`- ${item.path}`);
-    });
-  }
+  appendListSection(lines, [`${init.createdItems}:`], result.created, emptyLine, (item) => `- ${item.path}`);
 
   lines.push('');
-  lines.push(`${init.skippedItems}:`);
-  if (result.skipped.length === 0) {
-    lines.push(`- ${init.none}`);
-  } else {
-    result.skipped.forEach((item) => {
-      lines.push(`- ${formatSkippedItem(item, messages)}`);
-    });
-  }
+  appendListSection(lines, [`${init.skippedItems}:`], result.skipped, emptyLine, (item) =>
+    `- ${formatSkippedItem(item, messages)}`);
 
   return `${lines.join('\n')}\n`;
 }
 
 function formatInitMarkdownReport(result, options) {
-  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
-  const messages = getMessages(language);
+  const { messages } = resolveReportContext(options);
   const init = messages.init;
+  const emptyLine = `- ${init.none}`;
   const lines = [];
 
   lines.push(`# ${init.markdownTitle}`);
@@ -193,34 +201,25 @@ function formatInitMarkdownReport(result, options) {
     lines.push('');
   }
 
-  lines.push(`## ${init.createdItems}`);
-  lines.push('');
-  if (result.created.length === 0) {
-    lines.push(`- ${init.none}`);
-  } else {
-    result.created.forEach((item) => {
-      lines.push(`- ${item.path}`);
-    });
-  }
+  appendListSection(lines, [`## ${init.createdItems}`, ''], result.created, emptyLine, (item) => `- ${item.path}`);
 
   lines.push('');
-  lines.push(`## ${init.skippedItems}`);
-  lines.push('');
-  if (result.skipped.length === 0) {
-    lines.push(`- ${init.none}`);
-  } else {
-    result.skipped.forEach((item) => {
-      lines.push(`- ${formatSkippedItem(item, messages)}`);
-    });
-  }
+  appendListSection(lines, [`## ${init.skippedItems}`, ''], result.skipped, emptyLine, (item) =>
+    `- ${formatSkippedItem(item, messages)}`);
 
   return `${lines.join('\n')}\n`;
 }
 
 function formatTextReport(result, options) {
-  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
-  const messages = getMessages(language);
-  const report = getConfigReportMessages(messages.report);
+  const { language, messages } = resolveReportContext(options);
+  const report = messages.report;
+  const emptyLine = `- ${report.none}`;
+  const style = {
+    configHeading: (title) => [`${title}:`],
+    ignoredHeading: (title) => [`${title}:`],
+    keyValueLine: (key, value) => `- ${key}: ${value}`,
+    configCheckLine: (check, label) => `- [${check.passed ? report.pass : report.fail}] ${label}`
+  };
   const lines = [];
   const passedChecks = result.checks.filter((check) => check.passed);
   const failedChecks = result.checks.filter((check) => !check.passed);
@@ -248,80 +247,41 @@ function formatTextReport(result, options) {
   });
 
   lines.push('');
-  lines.push(`${report.passedChecks}:`);
-  if (passedChecks.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    passedChecks.forEach((check) => {
-      lines.push(`- [${report.pass}] ${getCheckLabel(check, messages)} (${check.points}/${check.maxPoints})`);
-    });
-  }
+  appendListSection(lines, [`${report.passedChecks}:`], passedChecks, emptyLine, (check) =>
+    `- [${report.pass}] ${getCheckLabel(check, messages)} (${check.points}/${check.maxPoints})`);
 
   lines.push('');
-  lines.push(`${report.failedChecks}:`);
-  if (failedChecks.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    failedChecks.forEach((check) => {
-      lines.push(`- [${report.fail}] ${getCheckLabel(check, messages)} (0/${check.maxPoints})`);
-    });
-  }
+  appendListSection(lines, [`${report.failedChecks}:`], failedChecks, emptyLine, (check) =>
+    `- [${report.fail}] ${getCheckLabel(check, messages)} (0/${check.maxPoints})`);
 
   lines.push('');
-  lines.push(`${report.warnings}:`);
-  if (result.warnings.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    result.warnings.forEach((warning) => {
-      lines.push(`- ${translateWarning(warning, language)}`);
-    });
-  }
+  appendWarningsSection(lines, [`${report.warnings}:`], result.warnings, language, emptyLine);
 
   lines.push('');
   if (result.config) {
-    lines.push(`${report.configuredChecks}:`);
-    lines.push(`- ${report.configFile}: ${result.config.path}`);
-    lines.push(`- ${report.configFailureMode}: ${result.config.failOnMissingConfigRequirements ? report.configFailureEnabled : report.configFailureDisabled}`);
-    if (result.config.checks.length === 0) {
-      lines.push(`- ${report.none}`);
-    } else {
-      result.config.checks.forEach((check) => {
-        lines.push(`- [${check.passed ? report.pass : report.fail}] ${formatConfigCheckLabel(check, messages)}`);
-      });
-    }
-    lines.push('');
+    appendConfigSection(lines, result.config, messages, emptyLine, style);
   }
 
   if (result.ignorePatterns && result.ignorePatterns.length > 0) {
-    lines.push(`${report.ignoredItems}:`);
-    lines.push(`- ${report.ignorePatterns}: ${result.ignorePatterns.join(', ')}`);
-    if (!result.ignored || result.ignored.length === 0) {
-      lines.push(`- ${report.none}`);
-    } else {
-      result.ignored.forEach((item) => {
-        lines.push(`- ${formatIgnoredItem(item, messages)}`);
-      });
-    }
-    lines.push('');
+    appendIgnoredSection(lines, result, messages, emptyLine, style);
   }
 
-  lines.push(`${report.recommendations}:`);
-  if (failedChecks.length === 0) {
-    lines.push(`- ${report.noRecommendations}`);
-  } else {
-    getUniqueRecommendations(failedChecks, messages).forEach((recommendation) => {
-      lines.push(`- ${recommendation}`);
-    });
-  }
+  appendRecommendationsSection(lines, [`${report.recommendations}:`], failedChecks, messages, `- ${report.noRecommendations}`);
 
   return `${lines.join('\n')}\n`;
 }
 
 function formatMarkdownReport(result, options) {
-  const language = options && options.lang ? options.lang : DEFAULT_LANGUAGE;
-  const messages = getMessages(language);
+  const { language, messages } = resolveReportContext(options);
   const markdown = messages.markdown;
-  const report = getConfigReportMessages(messages.report);
+  const report = messages.report;
+  const emptyLine = `- ${report.none}`;
+  const style = {
+    configHeading: (title) => [`## ${title}`, ''],
+    ignoredHeading: (title) => [`## ${title}`, ''],
+    keyValueLine: (key, value) => `- **${key}:** ${value}`,
+    configCheckLine: (check, label) => `- ${check.passed ? report.pass : report.fail}: ${label}`
+  };
   const lines = [];
   const passedChecks = result.checks.filter((check) => check.passed);
   const failedChecks = result.checks.filter((check) => !check.passed);
@@ -333,7 +293,7 @@ function formatMarkdownReport(result, options) {
   lines.push(`- **${markdown.grade}:** ${result.grade}`);
 
   if (result.threshold) {
-    lines.push(`- **${messages.report.threshold}:** ${formatThresholdMessage(result.threshold, result, messages)}`);
+    lines.push(`- **${report.threshold}:** ${formatThresholdMessage(result.threshold, result, messages)}`);
   }
 
   if (result.config) {
@@ -352,77 +312,26 @@ function formatMarkdownReport(result, options) {
   });
 
   lines.push('');
-  lines.push(`## ${markdown.passedChecks}`);
-  lines.push('');
-  if (passedChecks.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    passedChecks.forEach((check) => {
-      lines.push(`- ${getCheckLabel(check, messages)} (${check.points}/${check.maxPoints})`);
-    });
-  }
+  appendListSection(lines, [`## ${markdown.passedChecks}`, ''], passedChecks, emptyLine, (check) =>
+    `- ${getCheckLabel(check, messages)} (${check.points}/${check.maxPoints})`);
 
   lines.push('');
-  lines.push(`## ${markdown.failedChecks}`);
-  lines.push('');
-  if (failedChecks.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    failedChecks.forEach((check) => {
-      lines.push(`- ${getCheckLabel(check, messages)} (0/${check.maxPoints})`);
-    });
-  }
+  appendListSection(lines, [`## ${markdown.failedChecks}`, ''], failedChecks, emptyLine, (check) =>
+    `- ${getCheckLabel(check, messages)} (0/${check.maxPoints})`);
 
   lines.push('');
-  lines.push(`## ${markdown.warnings}`);
-  lines.push('');
-  if (result.warnings.length === 0) {
-    lines.push(`- ${report.none}`);
-  } else {
-    result.warnings.forEach((warning) => {
-      lines.push(`- ${translateWarning(warning, language)}`);
-    });
-  }
+  appendWarningsSection(lines, [`## ${markdown.warnings}`, ''], result.warnings, language, emptyLine);
 
   lines.push('');
   if (result.config) {
-    lines.push(`## ${report.configuredChecks}`);
-    lines.push('');
-    lines.push(`- **${report.configFile}:** ${result.config.path}`);
-    lines.push(`- **${report.configFailureMode}:** ${result.config.failOnMissingConfigRequirements ? report.configFailureEnabled : report.configFailureDisabled}`);
-    if (result.config.checks.length === 0) {
-      lines.push(`- ${report.none}`);
-    } else {
-      result.config.checks.forEach((check) => {
-        lines.push(`- ${check.passed ? report.pass : report.fail}: ${formatConfigCheckLabel(check, messages)}`);
-      });
-    }
-    lines.push('');
+    appendConfigSection(lines, result.config, messages, emptyLine, style);
   }
 
   if (result.ignorePatterns && result.ignorePatterns.length > 0) {
-    lines.push(`## ${report.ignoredItems}`);
-    lines.push('');
-    lines.push(`- **${report.ignorePatterns}:** ${result.ignorePatterns.join(', ')}`);
-    if (!result.ignored || result.ignored.length === 0) {
-      lines.push(`- ${report.none}`);
-    } else {
-      result.ignored.forEach((item) => {
-        lines.push(`- ${formatIgnoredItem(item, messages)}`);
-      });
-    }
-    lines.push('');
+    appendIgnoredSection(lines, result, messages, emptyLine, style);
   }
 
-  lines.push(`## ${markdown.recommendations}`);
-  lines.push('');
-  if (failedChecks.length === 0) {
-    lines.push(`- ${report.noRecommendations}`);
-  } else {
-    getUniqueRecommendations(failedChecks, messages).forEach((recommendation) => {
-      lines.push(`- ${recommendation}`);
-    });
-  }
+  appendRecommendationsSection(lines, [`## ${markdown.recommendations}`, ''], failedChecks, messages, `- ${report.noRecommendations}`);
 
   return `${lines.join('\n')}\n`;
 }

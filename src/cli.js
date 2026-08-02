@@ -51,8 +51,8 @@ function getHelpText(language) {
     messages.options,
     `  --init              ${messages.init}`,
     `  --min-score <0-100> ${messages.minScore}`,
-    `  --config <file>     ${messages.config || 'JSON 설정 파일에서 프로젝트별 검사를 읽습니다'}`,
-    `  --ignore <pattern>   ${messages.ignore || '루트 항목을 검사에서 제외합니다'}`,
+    `  --config <file>     ${messages.config}`,
+    `  --ignore <pattern>   ${messages.ignore}`,
     `  --json              ${messages.json}`,
     `  --markdown          ${messages.markdown}`,
     `  --output <file>     ${messages.output}`,
@@ -74,6 +74,35 @@ function getHelpText(language) {
     '  node bin/ai-ready-score.js . --markdown',
     '  node bin/ai-ready-score.js --output report.json'
   ].join('\n');
+}
+
+// Reads the value for an option that accepts one (`--opt value` or `--opt=value`).
+// Returns { present, value, consumedNext }:
+//   - For the inline `--opt=value` form, the value is whatever follows `=`
+//     (which may be empty or even start with `--`), and no extra arg is consumed.
+//   - For the separate `--opt value` form, the next arg is the value unless it is
+//     missing or looks like another option (`--`), in which case `present` is false.
+function readOptionValue(args, index, arg, optionName) {
+  const inlinePrefix = `${optionName}=`;
+
+  if (arg.startsWith(inlinePrefix)) {
+    const value = arg.slice(inlinePrefix.length);
+    return { present: value !== '', value, consumedNext: false };
+  }
+
+  const next = args[index + 1];
+
+  if (!next || next.startsWith('--')) {
+    return { present: false, value: next || '', consumedNext: false };
+  }
+
+  return { present: true, value: next, consumedNext: true };
+}
+
+// Validates a min-score value (must be a finite number within 0-100).
+function isValidMinScore(value) {
+  const parsed = Number(value);
+  return value !== '' && Number.isFinite(parsed) && parsed >= 0 && parsed <= 100;
 }
 
 function parseArgs(args) {
@@ -121,126 +150,82 @@ function parseArgs(args) {
       continue;
     }
 
-    if (arg === '--min-score') {
-      const minScore = args[index + 1];
+    if (arg === '--min-score' || arg.startsWith('--min-score=')) {
+      const { present, value, consumedNext } = readOptionValue(args, index, arg, '--min-score');
 
-      if (!minScore || minScore.startsWith('--')) {
-        options.errors.push(getInvalidMinScoreError(minScore || '', options.lang));
+      if (!present || !isValidMinScore(value)) {
+        options.errors.push(getInvalidMinScoreError(value, options.lang));
       } else {
-        const parsedMinScore = Number(minScore);
+        options.minScore = Number(value);
+      }
 
-        if (!Number.isFinite(parsedMinScore) || parsedMinScore < 0 || parsedMinScore > 100) {
-          options.errors.push(getInvalidMinScoreError(minScore, options.lang));
-        } else {
-          options.minScore = parsedMinScore;
-        }
-
+      if (consumedNext) {
         index += 1;
       }
       continue;
     }
 
-    if (arg.startsWith('--min-score=')) {
-      const minScore = arg.slice('--min-score='.length);
-      const parsedMinScore = Number(minScore);
+    if (arg === '--config' || arg.startsWith('--config=')) {
+      const { present, value, consumedNext } = readOptionValue(args, index, arg, '--config');
 
-      if (!minScore || !Number.isFinite(parsedMinScore) || parsedMinScore < 0 || parsedMinScore > 100) {
-        options.errors.push(getInvalidMinScoreError(minScore, options.lang));
-      } else {
-        options.minScore = parsedMinScore;
-      }
-      continue;
-    }
-
-    if (arg === '--config') {
-      const configPath = args[index + 1];
-
-      if (!configPath || configPath.startsWith('--')) {
+      if (!present) {
         options.errors.push('--config requires a file path.');
       } else {
-        options.config = configPath;
+        options.config = value;
+      }
+
+      if (consumedNext) {
         index += 1;
       }
       continue;
     }
 
-    if (arg.startsWith('--config=')) {
-      const configPath = arg.slice('--config='.length);
+    if (arg === '--ignore' || arg.startsWith('--ignore=')) {
+      const { present, value, consumedNext } = readOptionValue(args, index, arg, '--ignore');
 
-      if (!configPath) {
-        options.errors.push('--config requires a file path.');
-      } else {
-        options.config = configPath;
-      }
-      continue;
-    }
-
-    if (arg === '--ignore') {
-      const ignorePattern = args[index + 1];
-
-      if (!ignorePattern || ignorePattern.startsWith('--')) {
+      if (!present) {
         options.errors.push('--ignore requires a root-level name or pattern.');
       } else {
         try {
-          options.ignore.push(normalizeIgnorePattern(ignorePattern, '--ignore'));
-        } catch (error) {
-          options.errors.push(error.message);
-        }
-        index += 1;
-      }
-      continue;
-    }
-
-    if (arg.startsWith('--ignore=')) {
-      const ignorePattern = arg.slice('--ignore='.length);
-
-      if (!ignorePattern) {
-        options.errors.push('--ignore requires a root-level name or pattern.');
-      } else {
-        try {
-          options.ignore.push(normalizeIgnorePattern(ignorePattern, '--ignore'));
+          options.ignore.push(normalizeIgnorePattern(value, '--ignore'));
         } catch (error) {
           options.errors.push(error.message);
         }
       }
-      continue;
-    }
 
-    if (arg === '--lang') {
-      const language = args[index + 1];
-
-      if (!language || language.startsWith('--')) {
-        options.errors.push('--lang requires ko or en.');
-      } else if (!isSupportedLanguage(language)) {
-        options.errors.push(getUnsupportedLanguageError(language));
-        index += 1;
-      } else {
-        options.lang = normalizeLanguage(language);
+      if (consumedNext) {
         index += 1;
       }
       continue;
     }
 
-    if (arg.startsWith('--lang=')) {
-      const language = arg.slice('--lang='.length);
+    if (arg === '--lang' || arg.startsWith('--lang=')) {
+      const { present, value, consumedNext } = readOptionValue(args, index, arg, '--lang');
 
-      if (!language) {
+      if (!present) {
         options.errors.push('--lang requires ko or en.');
-      } else if (!isSupportedLanguage(language)) {
-        options.errors.push(getUnsupportedLanguageError(language));
+      } else if (!isSupportedLanguage(value)) {
+        options.errors.push(getUnsupportedLanguageError(value));
       } else {
-        options.lang = normalizeLanguage(language);
+        options.lang = normalizeLanguage(value);
+      }
+
+      if (consumedNext) {
+        index += 1;
       }
       continue;
     }
 
     if (arg === '--output' || arg === '-o') {
-      const outputPath = args[index + 1];
+      const { present, value, consumedNext } = readOptionValue(args, index, arg, '--output');
 
-      if (!outputPath || outputPath.startsWith('--')) {
+      if (!present) {
         options.errors.push('--output requires a file path.');
       } else {
-        options.output = outputPath;
+        options.output = value;
+      }
+
+      if (consumedNext) {
         index += 1;
       }
       continue;

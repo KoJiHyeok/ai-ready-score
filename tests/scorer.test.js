@@ -89,3 +89,43 @@ test('sensitive root files remove safety points and add warnings', () => {
     removeTempProject(projectPath);
   }
 });
+
+// Helper: returns the readme-usage check result for a crafted README.
+function scoreReadme(readmeContent) {
+  const projectPath = makeTempProject();
+
+  try {
+    writeFileSync(path.join(projectPath, 'README.md'), readmeContent, 'utf8');
+    const result = scoreProject(scanProject(projectPath));
+    return result.checks.find((check) => check.id === 'readme-usage');
+  } finally {
+    removeTempProject(projectPath);
+  }
+}
+
+test('readme-usage rejects a gamed README that only mentions the word usage', () => {
+  // Keyword appears in prose, but there is no usage section and no runnable
+  // command. A keyword-only check passes this; the structural check must reject it.
+  const gamed = [
+    '# My Project',
+    '',
+    'This tool is easy to use. See the usage notes in our wiki for how to run it.',
+    'Installation and usage details live elsewhere.'
+  ].join('\n');
+
+  assert.equal(scoreReadme(gamed).passed, false);
+});
+
+test('readme-usage accepts a real usage section with a runnable command', () => {
+  const real = [
+    '# My Project',
+    '',
+    '## Usage',
+    '',
+    '```sh',
+    'npx my-project .',
+    '```'
+  ].join('\n');
+
+  assert.equal(scoreReadme(real).passed, true);
+});

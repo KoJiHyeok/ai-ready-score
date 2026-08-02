@@ -82,7 +82,8 @@ function scanProject(inputPath, options) {
   const rootFileContents = {};
   ['README.md', 'AGENTS.md'].forEach((fileName) => {
     const filePath = path.join(targetPath, fileName);
-    rootFileContents[fileName] = getMatchingIgnorePattern(fileName, ignorePatterns) ? '' : isFile(filePath) ? readTextFile(filePath) : '';
+    const isIgnored = Boolean(getMatchingIgnorePattern(fileName, ignorePatterns));
+    rootFileContents[fileName] = !isIgnored && isFile(filePath) ? readTextFile(filePath) : '';
   });
 
   const packageJsonPath = path.join(targetPath, 'package.json');

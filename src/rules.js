@@ -1,6 +1,6 @@
 'use strict';
 
-const { hasAnyKeyword } = require('./utils');
+const { hasAnyKeyword, hasSectionWithCodeBlock } = require('./utils');
 
 const categories = [
   {
@@ -61,7 +61,7 @@ const rules = [
     label: 'README has usage instructions',
     points: 5,
     recommendation: 'Add CLI usage examples to README.md.',
-    test: (scan) => hasAnyKeyword(scan.rootFileContents['README.md'], ['usage', 'example output', 'how to run'])
+    test: (scan) => hasSectionWithCodeBlock(scan.rootFileContents['README.md'], ['usage', 'example', 'how to run', 'quick start', 'quickstart', 'getting started'])
   },
   {
     id: 'readme-structure',
